@@ -20,7 +20,7 @@
 #'
 #' @references
 #'
-#' DigitalPicoTools reference:
+#' DigitalPicoTools references:
 #'
 #' OncoPhase: A package for computing Somatic Mutation cellular Prevalence in cancer using haplotype phasing. Bioinformatics 2016. Submitted
 #'
