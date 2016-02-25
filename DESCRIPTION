@@ -1,0 +1,24 @@
+Package: DigitalPicoTools
+Type: Package
+Title: DIGITAL ANALYSIS OF  PICOGRAM QUANTITIES OF DNA
+Version: 0.1
+Date: 2016-02-25
+Authors@R: c(
+            person("Donatien", "Chedom Fotso", email = "donatien.chedom@well.ox.ac.uk", role = c("aut", "cre")),
+            person("Mohammad", "KaramiNejadRanjbar", email = "mohammad.karaminejadranjbar@st-hughs.ox.ac.uk", role = c("aut")),
+            person("Christopher", "Yau", email = "cyau@well.ox.ac.uk", role = c("aut")),
+            person("Ahmed", "Ahmed", email = "ahmed.ahmed@obs-gyn.ox.ac.uk", role = c("aut")))
+Description:
+       This package offers a set of tools for Digital analysis of whole genome sequencing of Picogram quantities of DNA. It contains a set of functions to compute and manipulate Long Fragment Reads (LFR) extracted from a DigitalPico Sequencing experiment. It includes functions to retrieve and visualize variants allelic count and fraction from a DigitalPico experiment.  Functions to retrieve and manipulate phasing and linkage information of genomic elements are still under implementations and will be included in a future version.
+LazyData: TRUE
+License: GPL-2
+Imports:
+    ggplot2,
+    Rsamtools,
+    S4Vectors
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat
+VignetteBuilder: knitr
+RoxygenNote: 5.0.1
