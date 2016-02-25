@@ -1,5 +1,7 @@
-############################################################ DigitalPicoTools : files Organization data.R - file to generate the Roxygen help documents for the data DigitalPicoTools.R - this file is the
-############################################################ main file of the package VCFtools.R - This file contains the function for vcf files.
+#########################################################
+### DigitalPicoTools : files Organization data.R - file to generate the Roxygen help documents for the data DigitalPicoTools.R - this file is the
+###############################################
+############# main file of the package VCFtools.R - This file contains the function for vcf files.
 
 
 
