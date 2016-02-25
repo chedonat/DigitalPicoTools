@@ -4,8 +4,7 @@ Title: DIGITAL ANALYSIS OF  PICOGRAM QUANTITIES OF DNA
 Version: 0.1
 Date: 2016-02-25
 Authors@R: c(
-            person("Donatien", "Chedom Fotso", email = "donatien.chedom@well.ox.ac.uk", role = c("aut", "cre")),
-            person("Mohammad", "KaramiNejadRanjbar", email = "mohammad.karaminejadranjbar@st-hughs.ox.ac.uk", role = c("aut")),
+            person("Donatien", "Chedom-Fotso", email = "donatien.chedom@well.ox.ac.uk", role = c("aut", "cre")),
             person("Christopher", "Yau", email = "cyau@well.ox.ac.uk", role = c("aut")),
             person("Ahmed", "Ahmed", email = "ahmed.ahmed@obs-gyn.ox.ac.uk", role = c("aut")))
 Description:

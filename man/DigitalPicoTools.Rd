@@ -18,11 +18,11 @@ For more detailed information on usage, see the package vignette, by typing
 Donatien Chedom-Fotso, Ahmed Ahmed, Christopher Yau,
 }
 \references{
-DigitalPicoTools reference:
+DigitalPicoTools references:
 
 OncoPhase: A package for computing Somatic Mutation cellular Prevalence in cancer using haplotype phasing. Bioinformatics 2016. Submitted
 
-DigitalPicoTools reference:
+DigitalPicoTools reference (Paper):
 
  Ovarian cancer haplotype sequencing reveals ubiquitous SOX2 overexpression in the premalignant fallopian tube epithelium
 }
