@@ -1,7 +1,7 @@
 
 # Loading a VCF files
 loading_vcf <- function(vcf_file, samples_id = NULL, region = NULL) {
-    
+
     cat("\n\n\t Loading the variants at   : ", vcf_file)
     variant_df <- read.table(file = vcf_file, header = F, fill = T)
     # If samples_id not provided, following the VCF specifications, the columns names from field 9 to the last field are considered.  No more valid
@@ -13,15 +13,15 @@ loading_vcf <- function(vcf_file, samples_id = NULL, region = NULL) {
     # else{ included_samples_id= intersect(samples_id, colnames(variant_df)) if(length(included_samples_id) ==0){ stop('None of the sample provided
     # in the samples_id parameter are contained in the VCF file ') }else if (length(included_samples_id) < length(samples_id)){ warnings(paste(' The
     # following samples provided are not contained in the VCF file ', paste(setdiff(samples_id, included_samples_id),collapse = ' '))) } }
-    
-    
-    if (9 + length(samples_id) != ncol(variant_df)) 
-        stop(" \n Number of columns do not match number of IDs provided. Was expecting ", ncol(variant_df) - 9, " IDs, but got ", length(samples_id), 
+
+
+    if (9 + length(samples_id) != ncol(variant_df))
+        stop(" \n Number of columns do not match number of IDs provided. Was expecting ", ncol(variant_df) - 9, " IDs, but got ", length(samples_id),
             " IDs")
     names(variant_df) = c("Chrom", "Pos", "ID", "REF", "ALT", "Qual", "Filter", "Info", "Format", samples_id)
-    rownames(variant_df) = make.unique(paste(variant_df$Chrom, "_", variant_df$Pos, "_", gsub(",", "-", variant_df$REF), "_", gsub(",", "-", variant_df$ALT), 
+    rownames(variant_df) = make.unique(paste(variant_df$Chrom, "_", variant_df$Pos, "_", gsub(",", "-", variant_df$REF), "_", gsub(",", "-", variant_df$ALT),
         sep = ""))
-    
+
     if (!is.null(region)) {
         GRegion = parseregion(region)
         if (!is.null(GRegion$Chrom)) {
@@ -33,10 +33,10 @@ loading_vcf <- function(vcf_file, samples_id = NULL, region = NULL) {
             }
         }
     }
-    
-    
-    
-    
+
+
+
+
     variant_df
 }
 
@@ -54,91 +54,100 @@ select_filter <- function(variant_df, filter_to_include, filter_to_exclude) {
     {
         reg_expression_filter_to_include = paste(filter_to_include, collapse = "|")
         selection_list_to_include = unlist(lapply(unlist(as.character(variant_df$Filter)), function(x) grepl(reg_expression_filter_to_include, x)))
-        
+
     }
     # if(length(filter_to_exclude)>0)
     {
         reg_expression_filter_to_exclude = paste(filter_to_exclude, collapse = "|")
         selection_list_to_exclude = unlist(lapply(unlist(as.character(variant_df$Filter)), function(x) grepl(reg_expression_filter_to_exclude, x)))
     }
-    
-    if (length(filter_to_include) == 0) 
+
+    if (length(filter_to_include) == 0)
         selection_list_to_include = !selection_list_to_exclude
-    if (length(filter_to_exclude) == 0) 
+    if (length(filter_to_exclude) == 0)
         selection_list_to_exclude = !selection_list_to_include
-    
+
     variant_df[selection_list_to_include & !selection_list_to_exclude, ]
 }
 
 # Generate a tabular form of the VCF files
 get_coveragetabular <- function(variant_df) {
-    
+
     samples_id = colnames(variant_df[10:ncol(variant_df)])
-    
+
     nb_samples = length(samples_id)
-    
+
     # Select only well formed info line
-    
+
     variant_df = variant_df[!is.na(variant_df$Info) & variant_df$Info != "" & grepl("TC=", variant_df$Info), ]
-    
+
     variant_passed = variant_df
     variant_passed = variant_df[c("Chrom", "Pos", "REF", "ALT", "Qual", "Filter")]
-    
+
     cat("\nTC...")
-    variant_passed["TC"] = unlist(lapply(unlist(variant_df["Info"]), function(x) as.numeric(unlist(strsplit(unlist(strsplit(as.character(x), ";"))[unlist(lapply(unlist(strsplit(as.character(x), 
+    variant_passed["TC"] = unlist(lapply(unlist(variant_df["Info"]), function(x) as.numeric(unlist(strsplit(unlist(strsplit(as.character(x), ";"))[unlist(lapply(unlist(strsplit(as.character(x),
         ";")), function(y) grepl("TC=", y)))], "="))[2])))
     cat("\nTR...")
-    variant_passed["TR"] = unlist(lapply(unlist(variant_df["Info"]), function(x) as.numeric(unlist(strsplit(unlist(strsplit(as.character(x), ";"))[unlist(lapply(unlist(strsplit(as.character(x), 
+    variant_passed["TR"] = unlist(lapply(unlist(variant_df["Info"]), function(x) as.numeric(unlist(strsplit(unlist(strsplit(as.character(x), ";"))[unlist(lapply(unlist(strsplit(as.character(x),
         ";")), function(y) grepl("TR=", y)))], "="))[2])))
     cat("\nAF...")
     variant_passed["AF"] = variant_passed["TR"]/variant_passed["TC"]
-    
+
     cat("\nGT/NR/NV sample processed : ")
-    
+
     for (isample in 1:nb_samples) {
         cat(" ", isample)
-        
-        variant_passed[paste(c("GT_", "NR_", "NV_"), samples_id[isample], sep = "")] = unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])), 
-            function(x) unlist(strsplit(x, ":"))[c(1, 5, 6)]))
-        
+
+
+
+      values=unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])),
+                           function(x) unlist(strsplit(x, ":"))[c(1, 5, 6)]))
+
+      variant_passed[paste(c("GT_", "NR_", "NV_"), samples_id[isample], sep = "")] = matrix(values, ncol=3,byrow=T)
+
+
+
+      #  variant_passed[paste(c("GT_", "NR_", "NV_"), samples_id[isample], sep = "")] = unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])),
+      #      function(x) unlist(strsplit(x, ":"))[c(1, 5, 6)]))
+
         # variant_passed[paste('NR_',samples_id[isample],sep='')] = unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])), function(x)
         # unlist(strsplit(x,':'))[5] )) variant_passed[paste('NV_',samples_id[isample],sep='')] =
         # unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])), function(x) unlist(strsplit(x,':'))[6] ))
-        variant_passed[paste("AF_", samples_id[isample], sep = "")] = as.numeric(unlist(variant_passed[paste("NV_", samples_id[isample], sep = "")]))/as.numeric(unlist(variant_passed[paste("NR_", 
-            samples_id[isample], sep = "")]))
-        
+       # variant_passed[paste("AF_", samples_id[isample], sep = "")] = as.numeric(unlist(variant_passed[paste("NV_", samples_id[isample], sep = "")]))/as.numeric(unlist(variant_passed[paste("NR_",
+       #     samples_id[isample], sep = "")]))
+
         # if(isample==1) variant_passed['GT']=unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])), function(x)
         # unlist(strsplit(x,':'))[1] )) else variant_passed['GT']=paste(unlist(variant_passed['GT']),
         # unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])), function(x) unlist(strsplit(x,':'))[1] )),sep=':')
     }
-    
+
     variant_passed
-    
+
 }
 
 
 # For 384 wells
 get_alleleinfotabular <- function(variant_df) {
-    
-    
+
+
     samples_id = colnames(variant_df[10:ncol(variant_df)])
-    
-    
+
+
     variant_passed = get_coveragetabular(variant_df)
-    
+
     newvariant_df = variant_passed[1:9]
-    
-    newvariant_df["WR"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NR_", samples_id, sep = "")] > 0 & (x[paste("NR_", 
+
+    newvariant_df["WR"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NR_", samples_id, sep = "")] > 0 & (x[paste("NR_",
         samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0)))))
-    newvariant_df["WV"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_", 
+    newvariant_df["WV"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_",
         samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0)))))
     wellfraction = as.numeric(unlist(newvariant_df["WV"]/newvariant_df["WR"]))
     newvariant_df["WF"] = wellfraction
-    newvariant_df["WFAdj"] = unlist(lapply(wellfraction, function(x) if (!is.na(x) && (x == 1)) 
-        runif(1, 0.95, 1) else x))
-    
+  #  newvariant_df["WFAdj"] = unlist(lapply(wellfraction, function(x) if (!is.na(x) && (x == 1))
+  #      runif(1, 0.95, 1) else x))
+
     newvariant_df
-    
+
 }
 
 
@@ -207,4 +216,4 @@ get_alleleinfotabular <- function(variant_df) {
 # count') plot(unlist(master_df['Pos']),unlist(master_df['TC']), cex=0.2,main=paste(chrom, ' Reads count'),ylab='Total Reads
 # Count',cex.main=1.5,cex.lab=1.5,cex.axis=1.5, col='black',xlab=NA,xlim=c(0, as.numeric(hg19_chrsize[chrom]) )) # v0=as.numeric(chrom_offset);
 # l=length(v0); v0[l+1]= master_df$Pos_offset[nrow(master_df)];l=length(v0); # v1=(v0[1:(l-1)] + v0[2:l])/2 # abline(v =v0 ,lwd=2,col =
-# 'black'); mtext(chrom_list,side=1,line=1, at=v1,las=2) } 
+# 'black'); mtext(chrom_list,side=1,line=1, at=v1,las=2) }
