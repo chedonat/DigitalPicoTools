@@ -1,5 +1,6 @@
 
 # Loading a VCF files
+#' @export
 loading_vcf <- function(vcf_file, samples_id = NULL, region = NULL) {
 
     cat("\n\n\t Loading the variants at   : ", vcf_file)
@@ -44,6 +45,7 @@ loading_vcf <- function(vcf_file, samples_id = NULL, region = NULL) {
 
 
 # Extract only the variant which passed all filters
+#' @export
 select_passed <- function(variant_df) {
     variant_df[variant_df$Filter == "PASS", ]
 }
@@ -71,6 +73,7 @@ select_filter <- function(variant_df, filter_to_include, filter_to_exclude) {
 }
 
 # Generate a tabular form of the VCF files
+#' @export
 get_coveragetabular <- function(variant_df) {
 
     samples_id = colnames(variant_df[10:ncol(variant_df)])
@@ -93,7 +96,7 @@ get_coveragetabular <- function(variant_df) {
     cat("\nAF...")
     variant_passed["AF"] = variant_passed["TR"]/variant_passed["TC"]
 
-    cat("\nGT/NR/NV sample processed : ")
+    cat("\nGT/NR/NV \n Processing sample/well:  : ")
 
     for (isample in 1:nb_samples) {
         cat(" ", isample)
@@ -127,6 +130,7 @@ get_coveragetabular <- function(variant_df) {
 
 
 # For 384 wells
+#' @export
 get_alleleinfotabular <- function(variant_df) {
 
 
