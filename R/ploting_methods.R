@@ -156,12 +156,6 @@ plot_LFRChromosomeDistribution <- function(fragment_df, region = NULL, minLength
     if (nrow(fragment_df) == 0)
         stop("\n No Long Fragment Reads in the specified region ")
 
-    # if(!is.null()) unlist(strsplit(region,':')) chrom = region_parts[1] startPosition = 1 endPosition = hg19_chrsize[chrom] fragment_df =
-    # fragment_df[fragment_df$Chrom == chrom , ] if(length(region_parts)>1){ coordinates = unlist(strsplit(region_parts[2],'-')) startPosition =
-    # as.numeric(coordinates[1]) endPosition = as.numeric(coordinates[2]) fragment_df = fragment_df[fragment_df$Chrom == chrom & fragment_df$Start
-    # >= startPosition & fragment_df$End <= endPosition,] } if(chrom!=mychrom){ warning('Chromosome in region do not match chromosome parameter. The
-    # chromosome specified in the region will be considered') } mychrom=chrom }else{ fragment_df = fragment_df[fragment_df$Chrom == mychrom , ] }
-
 
     regionsize = endPosition - startPosition
 
@@ -206,71 +200,87 @@ plot_LFRChromosomeDistribution <- function(fragment_df, region = NULL, minLength
 
 
 #' @export
-plot_allfraction <- function(variant_df, region = NULL, samplingRatio = 1, Value = "WellsFraction", main = "") {
+plot_AlleleInfo <- function(variant_df, region = NULL, samplingRatio = 1, Value = "WellsFraction", main = "") {
+
+if(samplingRatio>1)
+  stop("\n the argument sampling ration should be < 1")
 
 
-    if (!is.null(region)) {
-        GRegion = parseregion(region)
-        if (!is.null(GRegion$Chrom)) {
-            variant_df = variant_df[variant_df$Chrom == GRegion$Chrom, ]
-            mychrom = GRegion$Chrom
-            startPosition = 1
-            endPosition = hg19_chrsize[mychrom]
-            if (!is.null(GRegion$Start) && !is.null(GRegion$End)) {
-                startPosition = GRegion$Start
-                endPosition = GRegion$End
-                variant_df = variant_df[variant_df$Pos >= startPosition & variant_df$Pos <= endPosition, ]
-            }
-        }
+  hg19_chrsize <- list(chr1 = 249250621, chr2 = 243199373, chr3 = 198022430, chr4 = 191154276, chr5 = 180915260, chr6 = 171115067, chr7 = 159138663,
+                       chr8 = 146364022, chr9 = 141213431, chr10 = 135534747, chr11 = 135006516, chr12 = 133851895, chr13 = 115169878, chr14 = 107349540, chr15 = 102531392,
+                       chr16 = 90354753, chr17 = 81195210, chr18 = 78077248, chr19 = 59128983, chr20 = 63025520, chr21 = 48129895, chr22 = 51304566, chrX = 155270560,
+                       chrY = 59373566, chrM = 16571)
+
+
+  if (!is.null(region)) {
+    GRegion = parseregion(region)
+    if (!is.null(GRegion$Chrom)) {
+      variant_df = variant_df[variant_df$Chrom == GRegion$Chrom, ]
+      mychrom = GRegion$Chrom
+      startPosition = 1
+      PosPosition = hg19_chrsize[mychrom]
+      if (!is.null(GRegion$Start) && !is.null(GRegion$Pos)) {
+        startPosition = GRegion$Start
+        PosPosition = GRegion$Pos
+        variant_df = variant_df[variant_df$Pos >= startPosition & variant_df$Pos <= PosPosition, ]
+      }
     }
+  }else{
+    warnings("\n No region provided, The first chromosome is taken as the region \n ")
+    mychrom<-unlist(variant_df["Chrom"])[1]
+    cat("\n :  ", mychrom)
+  }
 
 
 
 
+  if (nrow(variant_df) == 0)
+    stop("\n No variants in the specified region")
 
+  step = floor(1/samplingRatio)
 
-    # if(!is.null(region)){ region_parts= unlist(strsplit(region,':')) chrom = region_parts[1] startPosition = 1 endPosition = hg19_chrsize[chrom]
-    # fragment_df = variant_df[variant_df$Chrom == chrom , ] if(length(region_parts)>1){ coordinates = unlist(strsplit(region_parts[2],'-'))
-    # startPosition = as.numeric(coordinates[1]) endPosition = as.numeric(coordinates[2]) variant_df = variant_df[variant_df$Chrom == chrom &
-    # variant_df$Start >= startPosition & variant_df$End <= endPosition,] } if(chrom!=mychrom){ warning('Chromosome in region do not match
-    # chromosome parameter. The chromosome specified in the region will be considered') } mychrom=chrom }else{ variant_df =
-    # variant_df[variant_df$Chrom == mychrom , ] }
-
-    if (nrow(variant_df) == 0)
-        stop("\n No variants in the specified region")
-
-    step = floor(1/samplingRatio)
-
-    indices = seq(1, nrow(variant_df), step)
-    variant_df = variant_df[indices, ]
+  indices = seq(1, nrow(variant_df), step)
+  variant_df = variant_df[indices, ]
 
 
 
-    master_df = variant_df
-    master_df["Pos_offset"] = as.numeric(unlist(master_df["Pos"])) + as.numeric(unlist(lapply(as.character(unlist(master_df["Chrom"])), function(x) if (!is.na(x)) as.numeric(chrom_offset[x]) else NA)))
+  master_df = variant_df
+  master_df["Pos_offset"] = as.numeric(unlist(master_df["Pos"])) + as.numeric(unlist(lapply(as.character(unlist(master_df["Chrom"])), function(x) if (!is.na(x)) as.numeric(chrom_offset[x]) else NA)))
 
 
 
-    if (Value == "WellsFraction") {
-        column = "WF"
-    } else if (Value == "WellsCount") {
-        column = "WR"
-    } else if (Value == "ReadsFraction") {
-        column = "AF"
-    } else if (Value == "ReadsCount") {
-        column = "TC"
-    } else {
-        stop("\n Invalid Value parameter")
-    }
-    plot(unlist(master_df["Pos"]), unlist(master_df[column]), cex = 0.2, main = main, ylab = Value, cex.main = 1.5, cex.lab = 1.5, cex.axis = 1.5,
-        col = "black", xlab = NA, xlim = c(0, as.numeric(hg19_chrsize[mychrom])))
-    v0 = as.numeric(chrom_offset)
-    l = length(v0)
-    v0[l + 1] = master_df$Pos_offset[nrow(master_df)]
-    l = length(v0)
-    v1 = (v0[1:(l - 1)] + v0[2:l])/2
-    abline(v = v0, lwd = 2, col = "black")
-    mtext(chrom_list, side = 1, line = 1, at = v1, las = 2)
+  if (Value == "WellsFraction") {
+    column_to_plot= "WF"
+  } else if (Value == "WellsCount") {
+    column_to_plot= "WR"
+  } else if (Value == "ReadsFraction") {
+    column_to_plot= "AF"
+  } else if (Value == "ReadsCount") {
+    column_to_plot= "TC"
+  } else {
+    stop("\n Invalid Value parameter")
+  }
+
+
+  present_chromosome<-as.character(unlist(unique(variant_df["Chrom"])))
+  present_chromosome=present_chromosome[!is.na(present_chromosome)]
+  offset_chromosome<-list()
+  offset_chromosome[present_chromosome[1]]=0
+
+  if(length(present_chromosome)>1)
+    for (ichr in 2: length(present_chromosome))
+      offset_chromosome[present_chromosome[ichr]]=as.numeric(offset_chromosome[present_chromosome[ichr-1]])+as.numeric(hg19_chrsize[present_chromosome[ichr-1]])
+
+  variant_df["Pos_offset"]=variant_df["Pos"] + as.numeric(unlist(lapply(as.character(unlist(variant_df["Chrom"])), function(x) if (!is.na(x)) as.numeric(offset_chromosome[x] ) else NA )))
+
+  plot(unlist(variant_df["Pos_offset"]),unlist(variant_df[ column_to_plot]), cex=0.2,main=main ,ylab=Value,xlab="",cex.main=1.5, col="black",ylim=c(0,1) )
+  v0=as.numeric(offset_chromosome); l=length(v0); v0[l+1]= variant_df$Pos_offset[nrow(variant_df)];l=length(v0);
+  v1=(v0[1:(l-1)] + v0[2:l])/2
+  #chrom_indices=which(chrom_list==present_chromosome)
+  abline(v =v0 ,lwd=2,col = "black"); mtext(present_chromosome,side=1,line=2, at=v1,las=2)
+
+
+
 
 
 }

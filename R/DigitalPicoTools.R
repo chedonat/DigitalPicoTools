@@ -40,14 +40,15 @@ NULL
 
 
 
-
+#' @export
 chrom_list <- paste("chr", c(1:22, "X", "Y", "M"), sep = "")
 # Chromosomes sizes
+#' @export
 hg19_chrsize <- list(chr1 = 249250621, chr2 = 243199373, chr3 = 198022430, chr4 = 191154276, chr5 = 180915260, chr6 = 171115067, chr7 = 159138663,
     chr8 = 146364022, chr9 = 141213431, chr10 = 135534747, chr11 = 135006516, chr12 = 133851895, chr13 = 115169878, chr14 = 107349540, chr15 = 102531392,
     chr16 = 90354753, chr17 = 81195210, chr18 = 78077248, chr19 = 59128983, chr20 = 63025520, chr21 = 48129895, chr22 = 51304566, chrX = 155270560,
     chrY = 59373566, chrM = 16571)
-
+#' @export
 chrom_offset <- c(0)
 # chrom_middle<-c(0 + hg19_chrsize[chrom_list[1]][[1]]/2)
 
@@ -766,7 +767,7 @@ VariantAlleleInfo <- setClass("VariantAlleleInfo", slots = character(0), prototy
 plot.VariantAlleleInfo <- function(object, region = NULL, samplingRatio = 1, Value = "WellsFraction", main = "") {
 
 
-    plot_allfraction(as.data.frame(object), region, samplingRatio, Value, main)
+    plot_AlleleInfo(as.data.frame(object), region, samplingRatio, Value, main)
 
 
 }
