@@ -124,6 +124,7 @@ get_coveragetabular <- function(variant_df) {
         # unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])), function(x) unlist(strsplit(x,':'))[1] )),sep=':')
     }
 
+    cat("\n\n Allle information retrieved \n\n")
     variant_passed
 
 }
