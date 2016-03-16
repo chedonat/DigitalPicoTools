@@ -134,7 +134,7 @@ plot_fragments <- function(fragment_df, type = "ScatterPlot", value = "Coverage"
 
 
 #' @export
-hist_fragments <- function(fragment_df, type = "ScatterPlot", value = "Coverage", minlength = 10000, color = "black", main = "", well = NULL) {
+hist_fragments <- function(fragment_df, value = "Coverage", minlength = 10000, color = "black", main = "", well = NULL) {
 
   if (is.null(well)) {
     well = unique(fragment_df$well_name)
@@ -155,11 +155,12 @@ hist_fragments <- function(fragment_df, type = "ScatterPlot", value = "Coverage"
     stop(" \n\n No fragments with the given parameters")
   }
 
+
     if (value == "Coverage") {
 
       myplot <- ggplot(data =fragment_df, aes(x = AvgCoverage)) +
         geom_histogram(
-          fill = rep(color,33),
+          fill = color, #rep(color,33),
           color = "dodgerblue2")  + ggtitle(main) +
         ylab("Frequency") + xlab("Average Coverage")+ theme(axis.text=element_text(size=12,face="bold"),  axis.title=element_text(size=12,face="bold"),  plot.title = element_text(size=16,face="bold"),  legend.title=element_text(size=10,face="bold"))+
         scale_x_continuous(breaks=number_ticks(10)) +
@@ -169,7 +170,7 @@ hist_fragments <- function(fragment_df, type = "ScatterPlot", value = "Coverage"
 
       myplot <- ggplot(data =fragment_df, aes(x = Length)) +
         geom_histogram(
-          fill = rep(color,33),
+          fill = color, #rep(color,33),
           color = "dodgerblue2")  + ggtitle(main) +
         ylab("Frequency") + xlab("Fragments Length")+ theme(axis.text=element_text(size=12,face="bold"),  axis.title=element_text(size=12,face="bold"),  plot.title = element_text(size=16,face="bold"),  legend.title=element_text(size=10,face="bold"))+
         scale_x_continuous(breaks=number_ticks(10)) +
