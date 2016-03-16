@@ -199,7 +199,7 @@ initsWellSamples <- function(WellSamples_list, BAMprefix = NULL, BAMsuffix = NUL
 
         if (!file.exists(BAMfilename)) {
             if (unexists.action == "unexists.fail") {
-                stop(paste(" \n\n The BAM file ", BAMfilename, " for well ", wellid, " do not exists \n\t check your parameters or set IgnoreUnexists=T",
+                stop(paste(" \n\n The BAM file ", BAMfilename, " for well ", wellid, " do not exists \n\t check your parameters or set unexists.action to unexists.exclude",
                   sep = ""))
             } else if (unexists.action == "unexists.exclude") {
                 next
@@ -657,7 +657,7 @@ summary.LFRset <- function(object) {
 #' @export
 plot.LFRset <- function(object, type = "ScatterPlot", value = "Coverage", minlength = 10000, color = "black", main = "", well = NULL) {
 
-    plot_fragments(object@Table, type, value, minlength, color, main, well)
+    plot_fragments(object@Table, type =type, value = value,  minlength = minlength, color = color, main = main, well = well)
 }
 
 
@@ -688,7 +688,7 @@ plot.LFRset <- function(object, type = "ScatterPlot", value = "Coverage", minlen
 #' @export
 hist.LFRset <- function(object, value = "Coverage", minlength = 10000, color = "black", main = "", well = NULL) {
 
-  hist_fragments(object@Table,  value, minlength, color, main, well)
+  hist_fragments(object@Table,  value = value, minlength = minlength, color = color, main = main, well =well)
 }
 
 
@@ -944,7 +944,7 @@ getVariantCoverageTable <- function(VCFFilePath, wells_id = NULL, region = NULL,
 #' @export
 getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail", minNbReads = 2, minFragmentsLength = 1000,  region = NULL)
   {
-    chrom_list <- paste("chr", c(1:22, "X", "Y", "M"), sep = "")
+   chrom_list<-paste('chr',c(1:22,'X','Y','M'),sep='')
     LFR_wgs_df <- data.frame()
     for (iwell in 1:length(wells_list)) {
         if (class(wells_list[iwell]) == "character") {
@@ -967,8 +967,8 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
 
 
         if (!file.exists(BAMfile_name)) {
-            if (!IgnoreUnexists) {
-                stop("\n The well bam file  ", BAMfile_name, " do not exists, Check the parameters or set IgnoreUnexists=TRUE ")
+            if (unexists.action == "unexists.fail") {
+                stop("\n The well bam file  ", BAMfile_name, " do not exists, Check the parameters or set unexists.action to unexists.exclude ")
             } else {
                 warning("\n The well bam file  ", BAMfile_name, " do not exists, Well will be skipped")
             }
@@ -991,14 +991,21 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
 
         #Extract only the region concerned
 
-        if (!is.null(region)) {
-          GRegion = parseregion(region)
+        if (!is.null(region) && region!="") {
           if (!is.null(GRegion$Chrom)) {
-            BAM_df = BAM_df[BAM_df$rname ==  GRegion$Chrom, ]
+            BAM_df = BAM_df[!is.na(BAM_df$rname) & as.character(BAM_df$rname) ==  GRegion$Chrom,]
+            if (nrow(BAM_df)==0){
+              warnings(" \n No sequencing reads in the Bam file corresponding to the region specified. Bam file will be skipped \n\n")
+              next
+            }
             if (!is.null(GRegion$Start) && !is.null(GRegion$End)) {
               startPosition = GRegion$Start
               endPosition = GRegion$End
               BAM_df = BAM_df[BAM_df$pos >= startPosition & BAM_df$pos <= endPosition, ]
+              if (nrow(BAM_df)==0){
+                warnings(" \n No sequencing reads in the Bam file corresponding to the region specified. Bam file will be skipped \n\n")
+                next
+              }
             }
           }
         }
@@ -1027,7 +1034,7 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
 
 
 
-
+        chrom_list=intersect(chrom_list,as.character(unique(BAM_df$rname)))
 
         for (mychrom in chrom_list) {
 
