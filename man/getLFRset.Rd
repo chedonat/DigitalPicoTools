@@ -5,7 +5,7 @@
 \title{Computing Long fragment Reads from the wells}
 \usage{
 getLFRset(wells_list, mindistance, unexists.action = "unexists.fail",
-  minNbReads = 2, minFragmentsLength = 1000)
+  minNbReads = 2, minFragmentsLength = 1000, region = NULL)
 }
 \arguments{
 \item{mindistance}{The minimum distance separating two consecutive LFR. Two paired reads located within that distance are considered to be originating from the same fragments of DNA.}
@@ -19,6 +19,8 @@ getLFRset(wells_list, mindistance, unexists.action = "unexists.fail",
  The default value is set at 'unexists.fail'}
 
 \item{minFragmentsLength}{Minimum length of a fragment for it to be considered as valid. default : 1000}
+
+\item{region}{A character string representing the region of the genome to consider given in the following format :  'chrom:start-end'. Default value :NULL and the Long Fragments will be retrieved across the whole BAM file.}
 
 \item{well_list}{A list of objects of class \code{\link{WellSample}} representing the wells to compute the fragments from. well_list can also be a vector of character string representing the file names to each well BAM file.}
 

@@ -30,8 +30,8 @@ N, N50_value, N50_totallength, L50_value, L50_percent, Max,Min, Mean, Median .
 \examples{
 data(FiveWellsLFRset)
 P009_LFR=getWellLFRset(FiveWellsLFRset,'P009')
-getLFRStats(P009_LFR)
-getLFRStats(FiveWellsLFRset)
+print(getLFRStats(P009_LFR))
+print(getLFRStats(FiveWellsLFRset))
 }
 \seealso{
 \code{\link{getN50}}, \code{\link{getLFRStatsPerWell}}, \code{\link{getBreadthGenomeCoverage}}, \code{\link{plotLFRDistribution}}

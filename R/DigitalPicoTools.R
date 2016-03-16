@@ -464,8 +464,8 @@ setMethod(f = "getN50", signature = "LFRset", definition = function(object) {
 #' @examples
 #' data(FiveWellsLFRset)
 #' P009_LFR=getWellLFRset(FiveWellsLFRset,'P009')
-#' getLFRStats(P009_LFR)
-#' getLFRStats(FiveWellsLFRset)
+#' print(getLFRStats(P009_LFR))
+#' print(getLFRStats(FiveWellsLFRset))
 #' @docType methods
 #' @export
 setGeneric("getLFRStats", def = function(object) {
@@ -516,7 +516,7 @@ setMethod(f = "getLFRStats", signature = "LFRset", definition = function(object)
 #' @examples
 #' data(FiveWellsLFRset)
 #' P009_LFR=getWellLFRset(FiveWellsLFRset,'P009')
-#' getLFRStatsPerWell(FiveWellsLFRset)
+#' print(getLFRStatsPerWell(FiveWellsLFRset))
 #' @docType methods
 #' @export
 setGeneric("getLFRStatsPerWell", def = function(object) {
@@ -651,14 +651,47 @@ summary.LFRset <- function(object) {
 #'      BAMprefix=paste(path.package('DigitalPicoTools'),'extdata/',sep='/'))
 #'  LFR_Info = getLFRset(WellSample_list,3000)
 #'  well1=getWellLFRset(LFR_Info,1)
-#'  plot(well1,Value='Length')
+#'  plot(well1,value='Length')
 #'  plot(LFR_Info,type='Landscape', color='magenta',main='test')
-#'  plot(well1,Value='Coverage',type='Landscape')
+#'  plot(well1,value='Coverage',type='Landscape')
 #' @export
-plot.LFRset <- function(object, type = "ScatterPlot", Value = "Coverage", minlength = 10000, color = "black", main = "", well = NULL) {
+plot.LFRset <- function(object, type = "ScatterPlot", value = "Coverage", minlength = 10000, color = "black", main = "", well = NULL) {
 
-    plot_fragments(object@Table, type, Value, minlength, color, main, well)
+    plot_fragments(object@Table, type, value, minlength, color, main, well)
 }
+
+
+
+
+#' Plotting histograms on an LFR data set
+#'
+#' This is a generic function to plot  the histogram of  the Length or the Average coverage of the long Frangment Reads within an LFR data set. given the paramter \emph{value}, two values can be plotted: The fragment length and the fragment average coverage
+#'
+#' @param x an  \code{\link{LFRset}} object containing the list of Long Fragment Reads
+#' @param Value The variable to plot the histogram for . Can be either 'Coverage' either 'length'. default is 'Coverage'.
+#' @param minlength Minimum length of a fragment to be considered. Default 10000.
+#' @param color histogram color. default: black
+#' @param main The title of the plot. default: None
+#' @return ''
+#' @seealso \code{\link{plotLFRDistribution}}, \code{\link{plot.LFRset}}, \code{\link{getWells}}, \code{\link{getWellLFRset}}, \code{\link{getLFRStats}}
+#' @examples
+#'
+#'  #Example 1:
+#'  wellsID_file=system.file('extdata','wells_id_tissue.txt',package='DigitalPicoTools')
+#'  wellsID_list<-unlist(read.table(wellsID_file))
+#'  WellSample_list=initsWellSamples(wellsID_list,
+#'      BAMprefix=paste(path.package('DigitalPicoTools'),'extdata/',sep='/'))
+#'  LFR_Info = getLFRset(WellSample_list,3000)
+#'  well1=getWellLFRset(LFR_Info,1)
+#'  hist(well1,value='Length')
+#'  hist(LFR_Info,value='Coverage', color='magenta',main='test')
+#' @export
+hist.LFRset <- function(object, value = "Coverage", minlength = 10000, color = "black", main = "", well = NULL) {
+
+  hist_fragments(object@Table,  value, minlength, color, main, well)
+}
+
+
 
 
 
@@ -764,7 +797,7 @@ VariantAlleleInfo <- setClass("VariantAlleleInfo", slots = character(0), prototy
 #' plot(AlleleInfo_df,'chr22')
 #'
 #' @export
-plot.VariantAlleleInfo <- function(object, region = NULL, samplingRatio = 1, Value = "WellsFraction", main = "") {
+plot.VariantAlleleInfo <- function(object, region = NULL, samplingRatio = 1, value = "WellsFraction", main = "") {
 
 
     plot_AlleleInfo(as.data.frame(object), region, samplingRatio, Value, main)
@@ -887,7 +920,8 @@ getVariantCoverageTable <- function(VCFFilePath, wells_id = NULL, region = NULL,
 #'  }
 #'  The default value is set at 'unexists.fail'
 #' @param minReads Minimum number of reads a fragment should contains to be considered as valid. Default value : 2
-#' @param minFragmentsLength Minimum length of a fragment for it to be considered as valid. default : 1000
+#' @param minFragmentsLength  Minimum length of a fragment for it to be considered as valid. default : 1000
+#' @param region  A character string representing the region of the genome to consider given in the following format :  'chrom:start-end'. Default value :NULL and the Long Fragments will be retrieved across the whole BAM file.
 #' @return An object of class  \code{\link{LFRset}}.
 #' @examples
 #'   wellsID_file=system.file('extdata','wells_id_tissue.txt',package='DigitalPicoTools')
@@ -908,16 +942,10 @@ getVariantCoverageTable <- function(VCFFilePath, wells_id = NULL, region = NULL,
 
 #' @seealso \code{\link{getWellLFRset}}, \code{\link{getLFRStats}, \code{\link{plotLFRDistribution}}}, \code{\link{getWells}},  \code{\link{plotLFRDistribution}}, \code{\link{plot.LFRset}}, \code{\link{summary.LFRset}}, \code{\link{getLFRStatsPerWell}}, \code{\link{getBreadthGenomeCoverage}},  \code{\link{getN50}}
 #' @export
-getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail", minNbReads = 2, minFragmentsLength = 1000) {
-
-
+getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail", minNbReads = 2, minFragmentsLength = 1000,  region = NULL)
+  {
     chrom_list <- paste("chr", c(1:22, "X", "Y", "M"), sep = "")
-
-
     LFR_wgs_df <- data.frame()
-
-
-
     for (iwell in 1:length(wells_list)) {
         if (class(wells_list[iwell]) == "character") {
             BAMfile_name <- wells_list[iwell]
@@ -960,6 +988,21 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
         # store as data frame
         BAM_df <- do.call("DataFrame", list)
         names(BAM_df) <- BAM_field
+
+        #Extract only the region concerned
+
+        if (!is.null(region)) {
+          GRegion = parseregion(region)
+          if (!is.null(GRegion$Chrom)) {
+            BAM_df = BAM_df[BAM_df$rname ==  GRegion$Chrom, ]
+            if (!is.null(GRegion$Start) && !is.null(GRegion$End)) {
+              startPosition = GRegion$Start
+              endPosition = GRegion$End
+              BAM_df = BAM_df[BAM_df$pos >= startPosition & BAM_df$pos <= endPosition, ]
+            }
+          }
+        }
+
 
         # Consider only the reads having both mate in the same chromosome
         BAM_df = BAM_df[!is.na(BAM_df$mrnm) & !is.na(BAM_df$rname) & BAM_df$mrnm == BAM_df$rname, ]

@@ -5,18 +5,18 @@
 \title{Plotting the variant allele information}
 \usage{
 \method{plot}{VariantAlleleInfo}(object, region = NULL, samplingRatio = 1,
-  Value = "WellsFraction", main = "")
+  value = "WellsFraction", main = "")
 }
 \arguments{
 \item{region}{Region to be plotted.  If NULL then the whole region covered by the variants will be considered}
 
 \item{samplingRatio}{Ratio of points to plot. Only 1 each samplingRatio points will be plotted.}
 
-\item{Value}{Information to plot. Can be one of WellsFraction, WellsCounts, ReadsFraction, ReadsCounts.}
-
 \item{main}{The title of the plot. default: None}
 
 \item{x}{an  \code{\link{VariantAlleleInfo}} object containing the list of variant and their genomic location and allele count information}
+
+\item{Value}{Information to plot. Can be one of WellsFraction, WellsCounts, ReadsFraction, ReadsCounts.}
 }
 \value{
 ''

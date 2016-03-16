@@ -4,13 +4,11 @@
 \alias{plot.LFRset}
 \title{Plotting an LFR data set}
 \usage{
-\method{plot}{LFRset}(object, type = "ScatterPlot", Value = "Coverage",
+\method{plot}{LFRset}(object, type = "ScatterPlot", value = "Coverage",
   minlength = 10000, color = "black", main = "", well = NULL)
 }
 \arguments{
 \item{type}{the type of the plot. Can be either 'ScatterPlot' either 'Landscape'. The default value is 'ScatterPlot'.}
-
-\item{Value}{The variable to represent on the y-Axis. Can be either 'Coverage' either 'length'. default is 'Coverage'.}
 
 \item{minlength}{Minimum length of a fragment to be considered. Default 10000.}
 
@@ -19,6 +17,8 @@
 \item{main}{The title of the plot. default: None}
 
 \item{x}{an  \code{\link{LFRset}} object containing the list of Long Fragment Reads}
+
+\item{Value}{The variable to represent on the y-Axis. Can be either 'Coverage' either 'length'. default is 'Coverage'.}
 }
 \value{
 ''
@@ -42,9 +42,9 @@ In both types, the paramater \emph{Value} allow to specifie which variable will 
      BAMprefix=paste(path.package('DigitalPicoTools'),'extdata/',sep='/'))
  LFR_Info = getLFRset(WellSample_list,3000)
  well1=getWellLFRset(LFR_Info,1)
- plot(well1,Value='Length')
+ plot(well1,value='Length')
  plot(LFR_Info,type='Landscape', color='magenta',main='test')
- plot(well1,Value='Coverage',type='Landscape')
+ plot(well1,value='Coverage',type='Landscape')
 }
 \seealso{
 \code{\link{plotLFRDistribution}}, \code{\link{plot.LFRset}}, \code{\link{getWells}}, \code{\link{getWellLFRset}}, \code{\link{getLFRStats}}

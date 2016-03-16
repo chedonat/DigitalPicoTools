@@ -28,8 +28,10 @@ number_ticks <- function(n) {
     function(limits) pretty(limits, n)
 }
 
+
+
 #' @export
-plot_fragments <- function(fragment_df, type = "ScatterPlot", Value = "Coverage", minlength = 10000, color = "black", main = "", well = NULL) {
+plot_fragments <- function(fragment_df, type = "ScatterPlot", value = "Coverage", minlength = 10000, color = "black", main = "", well = NULL) {
 
     if (is.null(well)) {
         well = unique(fragment_df$well_name)
@@ -43,7 +45,6 @@ plot_fragments <- function(fragment_df, type = "ScatterPlot", Value = "Coverage"
 
 
 
-
     fragment_df = fragment_df[fragment_df$Length > minlength, ]
 
     if (nrow(fragment_df) == 0) {
@@ -51,12 +52,12 @@ plot_fragments <- function(fragment_df, type = "ScatterPlot", Value = "Coverage"
     }
 
     if (type == "ScatterPlot") {
-        if (Value == "Coverage") {
+        if (value == "Coverage") {
             myplot <- ggplot(fragment_df, aes(Length, AvgCoverage)) + geom_point(colour = color) + ggtitle(main) + ylab("Average Coverage") + xlab("Fragment length") +
                 theme(axis.text = element_text(size = 12, face = "bold"), axis.title = element_text(size = 12, face = "bold"), plot.title = element_text(size = 14,
                   face = "bold"), legend.title = element_text(size = 10, face = "bold"))
 
-        } else if (Value == "Length") {
+        } else if (value == "Length") {
 
             myplot <- ggplot(fragment_df, aes(AvgCoverage, Length)) + geom_point(colour = color) + ggtitle(main) + ylab("Fragment length") + xlab(" Average Coverage") +
                 theme(axis.text = element_text(size = 12, face = "bold"), axis.title = element_text(size = 12, face = "bold"), plot.title = element_text(size = 14,
@@ -96,7 +97,7 @@ plot_fragments <- function(fragment_df, type = "ScatterPlot", Value = "Coverage"
         size_list <- unique(sort(as.numeric(unlist(frag_df["Point_size1"]))))
         indices = seq(1, length(size_list), 2)
 
-        if (Value == "Coverage") {
+        if (value == "Coverage") {
             myplot <- ggplot(frag_df, aes(x = Pos_offset, AvgCoverage, size = factor(Point_size1))) + geom_point(colour = color) + ggtitle(main) +
                 geom_vline(xintercept = chrom_offset[1:25]) + theme(axis.text = element_text(size = 14, face = "bold", color = "white"), axis.title = element_text(size = 14,
                 face = "bold"), plot.title = element_text(size = 16, face = "bold"), legend.title = element_text(size = 12, face = "bold")) + scale_size_discrete(name = "Fragment \n Length",
@@ -104,7 +105,7 @@ plot_fragments <- function(fragment_df, type = "ScatterPlot", Value = "Coverage"
                 ylim(0, 1.1 * max(as.numeric(frag_df$AvgCoverage))) + annotate("text", x = chrom_offset[1:25] + (unlist(hg19_chrsize[1:25]) + c(rep(0,
                 24), 5e+07))/2, y = 0, label = c(1:22, "X", "Y", "M"))
 
-        } else if (Value == "Length") {
+        } else if (value == "Length") {
             myplot <- ggplot(frag_df, aes(x = Pos_offset, Length, size = factor(Point_size2))) + geom_point(colour = color) + ggtitle(main) + geom_vline(xintercept = chrom_offset[1:25]) +
                 theme(axis.text = element_text(size = 14, face = "bold", color = "white"), axis.title = element_text(size = 14, face = "bold"),
                   plot.title = element_text(size = 16, face = "bold"), legend.title = element_text(size = 12, face = "bold")) + scale_size_discrete(name = "Average \n Coverage",
@@ -124,9 +125,75 @@ plot_fragments <- function(fragment_df, type = "ScatterPlot", Value = "Coverage"
 
     print(myplot)
 
+    myplot
 
 
 }
+
+
+
+
+#' @export
+hist_fragments <- function(fragment_df, type = "ScatterPlot", value = "Coverage", minlength = 10000, color = "black", main = "", well = NULL) {
+
+  if (is.null(well)) {
+    well = unique(fragment_df$well_name)
+    if (length(well) > 0)
+      warning("\n More than one well provided. All  will be considered. Restrict to a single well by setting the well parameter ")
+
+
+  } else {
+    fragment_df = fragment_df[fragment_df$well_name == well, ]
+  }
+
+
+
+
+  fragment_df = fragment_df[fragment_df$Length > minlength, ]
+
+  if (nrow(fragment_df) == 0) {
+    stop(" \n\n No fragments with the given parameters")
+  }
+
+    if (value == "Coverage") {
+
+      myplot <- ggplot(data =fragment_df, aes(x = AvgCoverage)) +
+        geom_histogram(
+          fill = rep(color,33),
+          color = "dodgerblue2")  + ggtitle(main) +
+        ylab("Frequency") + xlab("Average Coverage")+ theme(axis.text=element_text(size=12,face="bold"),  axis.title=element_text(size=12,face="bold"),  plot.title = element_text(size=16,face="bold"),  legend.title=element_text(size=10,face="bold"))+
+        scale_x_continuous(breaks=number_ticks(10)) +
+        scale_y_continuous(breaks=number_ticks(10))
+
+    } else if (value == "Length") {
+
+      myplot <- ggplot(data =fragment_df, aes(x = Length)) +
+        geom_histogram(
+          fill = rep(color,33),
+          color = "dodgerblue2")  + ggtitle(main) +
+        ylab("Frequency") + xlab("Fragments Length")+ theme(axis.text=element_text(size=12,face="bold"),  axis.title=element_text(size=12,face="bold"),  plot.title = element_text(size=16,face="bold"),  legend.title=element_text(size=10,face="bold"))+
+        scale_x_continuous(breaks=number_ticks(10)) +
+        scale_y_continuous(breaks=number_ticks(10))
+
+
+    } else {
+      stop("\nValue should be either Coverage either Length")
+    }
+
+
+
+
+  print(myplot)
+
+  myplot
+
+
+
+}
+
+
+
+
 
 #' @export
 plot_LFRChromosomeDistribution <- function(fragment_df, region = NULL, minLength = 10000) {
@@ -200,7 +267,7 @@ plot_LFRChromosomeDistribution <- function(fragment_df, region = NULL, minLength
 
 
 #' @export
-plot_AlleleInfo <- function(variant_df, region = NULL, samplingRatio = 1, Value = "WellsFraction", main = "") {
+plot_AlleleInfo <- function(variant_df, region = NULL, samplingRatio = 1, value = "WellsFraction", main = "") {
 
 if(samplingRatio>1)
   stop("\n the argument sampling ration should be < 1")
@@ -249,16 +316,16 @@ if(samplingRatio>1)
 
 
 
-  if (Value == "WellsFraction") {
+  if (value == "WellsFraction") {
     column_to_plot= "WF"
   } else if (Value == "WellsCount") {
     column_to_plot= "WR"
-  } else if (Value == "ReadsFraction") {
+  } else if (value == "ReadsFraction") {
     column_to_plot= "AF"
-  } else if (Value == "ReadsCount") {
+  } else if (value == "ReadsCount") {
     column_to_plot= "TC"
   } else {
-    stop("\n Invalid Value parameter")
+    stop("\n Invalid value parameter")
   }
 
 
@@ -273,7 +340,7 @@ if(samplingRatio>1)
 
   variant_df["Pos_offset"]=variant_df["Pos"] + as.numeric(unlist(lapply(as.character(unlist(variant_df["Chrom"])), function(x) if (!is.na(x)) as.numeric(offset_chromosome[x] ) else NA )))
 
-  plot(unlist(variant_df["Pos_offset"]),unlist(variant_df[ column_to_plot]), cex=0.2,main=main ,ylab=Value,xlab="",cex.main=1.5, col="black",ylim=c(0,1) )
+  plot(unlist(variant_df["Pos_offset"]),unlist(variant_df[ column_to_plot]), cex=0.2,main=main ,ylab=value,xlab="",cex.main=1.5, col="black",ylim=c(0,1) )
   v0=as.numeric(offset_chromosome); l=length(v0); v0[l+1]= variant_df$Pos_offset[nrow(variant_df)];l=length(v0);
   v1=(v0[1:(l-1)] + v0[2:l])/2
   #chrom_indices=which(chrom_list==present_chromosome)

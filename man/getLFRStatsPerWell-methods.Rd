@@ -29,7 +29,7 @@ A data frame  containing for each well having an LFR in the LFR set  the followi
 \examples{
 data(FiveWellsLFRset)
 P009_LFR=getWellLFRset(FiveWellsLFRset,'P009')
-getLFRStatsPerWell(FiveWellsLFRset)
+print(getLFRStatsPerWell(FiveWellsLFRset))
 }
 \seealso{
 \code{\link{getN50}}, \code{\link{getLFRStats}}, \code{\link{getBreadthGenomeCoverage}}, \code{\link{plotLFRDistribution}}, \code{\link{summary.LFRset}}, \code{\link{getLFRset}}, \code{\link{plot.LFRset}}
