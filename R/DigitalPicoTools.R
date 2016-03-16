@@ -991,7 +991,7 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
 
         #Extract only the region concerned
 
-        if (!is.null(region) && region!="") {
+        if (!is.null(region) && region!="" && region!="*") {
           GRegion = parseregion(region)
           if (!is.null(GRegion$Chrom)) {
             BAM_df = BAM_df[!is.na(BAM_df$rname) & as.character(BAM_df$rname) ==  GRegion$Chrom,]

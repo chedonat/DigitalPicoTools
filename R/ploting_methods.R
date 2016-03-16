@@ -43,8 +43,6 @@ plot_fragments <- function(fragment_df, type = "ScatterPlot", value = "Coverage"
         fragment_df = fragment_df[fragment_df$well_name == well, ]
     }
 
-
-
     fragment_df = fragment_df[fragment_df$Length > minlength, ]
 
     if (nrow(fragment_df) == 0) {
@@ -99,7 +97,7 @@ plot_fragments <- function(fragment_df, type = "ScatterPlot", value = "Coverage"
 
         if (value == "Coverage") {
             myplot <- ggplot(frag_df, aes(x = Pos_offset, AvgCoverage, size = factor(Point_size1))) + geom_point(colour = color) + ggtitle(main) +
-                geom_vline(xintercept = chrom_offset[1:25]) + theme(axis.text = element_text(size = 14, face = "bold", color = "white"), axis.title = element_text(size = 14,
+                geom_vline(xintercept = chrom_offset[1:25]) + theme(axis.text = element_text(size = 14, face = "bold", color = "black"), axis.title = element_text(size = 14,
                 face = "bold"), plot.title = element_text(size = 16, face = "bold"), legend.title = element_text(size = 12, face = "bold")) + scale_size_discrete(name = "Fragment \n Length",
                 breaks = size_list[indices], labels = paste(size_list[indices], "0K", sep = "")) + ylab("Average Coverage") + xlab("Whole Genome") +
                 ylim(0, 1.1 * max(as.numeric(frag_df$AvgCoverage))) + annotate("text", x = chrom_offset[1:25] + (unlist(hg19_chrsize[1:25]) + c(rep(0,
@@ -107,7 +105,7 @@ plot_fragments <- function(fragment_df, type = "ScatterPlot", value = "Coverage"
 
         } else if (value == "Length") {
             myplot <- ggplot(frag_df, aes(x = Pos_offset, Length, size = factor(Point_size2))) + geom_point(colour = color) + ggtitle(main) + geom_vline(xintercept = chrom_offset[1:25]) +
-                theme(axis.text = element_text(size = 14, face = "bold", color = "white"), axis.title = element_text(size = 14, face = "bold"),
+                theme(axis.text = element_text(size = 14, face = "bold", color = "black"), axis.title = element_text(size = 14, face = "bold"),
                   plot.title = element_text(size = 16, face = "bold"), legend.title = element_text(size = 12, face = "bold")) + scale_size_discrete(name = "Average \n Coverage",
                 labels = paste(unique(sort(as.numeric(unlist(frag_df["Point_size2"])))), "x", sep = "")) + ylab("Fragment Length") + xlab("Whole Genome") +
                 annotate("text", x = chrom_offset[1:25] + (unlist(hg19_chrsize[1:25]) + c(rep(0, 24), 5e+07))/2, y = -2, label = c(1:22, "X", "Y",
@@ -159,9 +157,7 @@ hist_fragments <- function(fragment_df, value = "Coverage", minlength = 10000, c
     if (value == "Coverage") {
 
       myplot <- ggplot(data =fragment_df, aes(x = AvgCoverage)) +
-        geom_histogram(
-          fill = color, #rep(color,33),
-          color = "dodgerblue2")  + ggtitle(main) +
+        geom_histogram(  fill = color, color = "dodgerblue2")  + ggtitle(main) +
         ylab("Frequency") + xlab("Average Coverage")+ theme(axis.text=element_text(size=12,face="bold"),  axis.title=element_text(size=12,face="bold"),  plot.title = element_text(size=16,face="bold"),  legend.title=element_text(size=10,face="bold"))+
         scale_x_continuous(breaks=number_ticks(10)) +
         scale_y_continuous(breaks=number_ticks(10))
@@ -169,9 +165,7 @@ hist_fragments <- function(fragment_df, value = "Coverage", minlength = 10000, c
     } else if (value == "Length") {
 
       myplot <- ggplot(data =fragment_df, aes(x = Length)) +
-        geom_histogram(
-          fill = color, #rep(color,33),
-          color = "dodgerblue2")  + ggtitle(main) +
+        geom_histogram( fill = color, color = "dodgerblue2")  + ggtitle(main) +
         ylab("Frequency") + xlab("Fragments Length")+ theme(axis.text=element_text(size=12,face="bold"),  axis.title=element_text(size=12,face="bold"),  plot.title = element_text(size=16,face="bold"),  legend.title=element_text(size=10,face="bold"))+
         scale_x_continuous(breaks=number_ticks(10)) +
         scale_y_continuous(breaks=number_ticks(10))
