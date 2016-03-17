@@ -953,6 +953,12 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
             filenameparts = unlist(strsplit(BAMfile_name, "/"))
             filenameparts_filename = filenameparts[length(filenameparts)]
             Well_ID = unlist(strsplit(filenameparts_filename, "\\."))[1]
+            #We need to take the first string before any "_" since it is used as separators in the fragment name
+            if(grepl("_",Well_ID  )){
+              warning(paste(" The well ID ", Well_ID," contains the character _,  ", unlist(strsplit(Well_ID, "_"))[1]  , " will be considered"))
+              Well_ID = unlist(strsplit(Well_ID, "_"))[1]
+            }
+
             # WellID=paste('W', Well_Number,sep='')
         } else if (as.character(class(wells_list[[iwell]])) == "WellSample") {
             BAMfile_name <- wells_list[[iwell]]@BAMfilename
