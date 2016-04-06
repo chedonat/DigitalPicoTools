@@ -6,7 +6,7 @@
 \usage{
 getVariantAlleleInfo(VCFFilePath, wells_id = NULL, region = NULL,
   OnlyPassFilter = FALSE, FiltersToInclude = NULL,
-  FiltersToExclude = NULL)
+  FiltersToExclude = NULL, RetrieveWellsIDs = FALSE)
 }
 \arguments{
 \item{VCFFilePath}{A character string representing the path to a VCF file obtained from an LFR experiment study. The file should contains one genotype information column per well sample.}
@@ -20,6 +20,8 @@ getVariantAlleleInfo(VCFFilePath, wells_id = NULL, region = NULL,
 \item{FiltersToInclude}{A vector of character string representing a list of calling filter status. All the variant having any of them will be included in the analysis.}
 
 \item{FiltersToExclude}{A vector of character string representing a list of calling filter status. All the variant having any of them will be excluded from  the analysis given that the filte ris not included in FiltersToInclude.}
+
+\item{RetrieveWellsIDs}{A logical value specifying if the wells ID supporting the reference and  the SNP should be retrieved or not. Usefull for the Phasing analysis. (Default : FALSE)}
 }
 \value{
 An object of class  \code{\link{VariantAlleleInfo}}.

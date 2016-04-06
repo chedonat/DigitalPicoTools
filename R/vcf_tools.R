@@ -3,42 +3,45 @@
 #' @export
 loading_vcf <- function(vcf_file, samples_id = NULL, region = NULL) {
 
-    cat("\n\n\t Loading the variants at   : ", vcf_file)
-    variant_df <- read.table(file = vcf_file, header = F, fill = T)
-    # If samples_id not provided, following the VCF specifications, the columns names from field 9 to the last field are considered.  No more valid
-    # : If provided we make sure the well ID given are include din the columns headers. If they dont match the column number a warning signal is
-    # emitted.
-    if (is.null(samples_id)) {
-        samples_id = colnames(variant_df[10:ncol(variant_df)])
+  cat("\n\n\t Loading the variants at   : ", vcf_file)
+  variant_df <- read.table(file = vcf_file, header = F)
+
+
+  # If samples_id not provided, following the VCF specifications, the columns names from field 9 to the last field are considered.
+  #If samples_id is provided as a single integer n, the first n character of the samples_id column are considered.
+
+  if (is.null(samples_id)) {
+    samples_id=samples(scanVcfHeader(vcffile))
+  }else if(class(samples_id)=="numeric")
+  {
+    samples_names=samples(scanVcfHeader(vcffile))
+    samples_id = substr(samples_names,1,samples_id)
+  }else if (9 + length(samples_id) != ncol(variant_df))
+    stop(" \n Number of columns do not match number of IDs provided. Was expecting ", ncol(variant_df) - 9, " IDs, but got ", length(samples_id),
+         " IDs")
+
+
+
+  names(variant_df) = c("Chrom", "Pos", "ID", "REF", "ALT", "Qual", "Filter", "Info", "Format", samples_id)
+  rownames(variant_df) = make.unique(paste(variant_df$Chrom, "_", variant_df$Pos, "_", gsub(",", "-", variant_df$REF), "_", gsub(",", "-", variant_df$ALT),
+                                           sep = ""))
+
+  if (!is.null(region)) {
+    GRegion = parseregion(region)
+    if (!is.null(GRegion$Chrom)) {
+      variant_df = variant_df[variant_df$Chrom == GRegion$Chrom, ]
+      if (!is.null(GRegion$Start) && !is.null(GRegion$End)) {
+        startPosition = GRegion$Start
+        endPosition = GRegion$End
+        variant_df = variant_df[variant_df$Pos >= startPosition & variant_df$Pos <= endPosition, ]
+      }
     }
-    # else{ included_samples_id= intersect(samples_id, colnames(variant_df)) if(length(included_samples_id) ==0){ stop('None of the sample provided
-    # in the samples_id parameter are contained in the VCF file ') }else if (length(included_samples_id) < length(samples_id)){ warnings(paste(' The
-    # following samples provided are not contained in the VCF file ', paste(setdiff(samples_id, included_samples_id),collapse = ' '))) } }
-
-
-    if (9 + length(samples_id) != ncol(variant_df))
-        stop(" \n Number of columns do not match number of IDs provided. Was expecting ", ncol(variant_df) - 9, " IDs, but got ", length(samples_id),
-            " IDs")
-    names(variant_df) = c("Chrom", "Pos", "ID", "REF", "ALT", "Qual", "Filter", "Info", "Format", samples_id)
-    rownames(variant_df) = make.unique(paste(variant_df$Chrom, "_", variant_df$Pos, "_", gsub(",", "-", variant_df$REF), "_", gsub(",", "-", variant_df$ALT),
-        sep = ""))
-
-    if (!is.null(region)) {
-        GRegion = parseregion(region)
-        if (!is.null(GRegion$Chrom)) {
-            variant_df = variant_df[variant_df$Chrom == GRegion$Chrom, ]
-            if (!is.null(GRegion$Start) && !is.null(GRegion$End)) {
-                startPosition = GRegion$Start
-                endPosition = GRegion$End
-                variant_df = variant_df[variant_df$Pos >= startPosition & variant_df$Pos <= endPosition, ]
-            }
-        }
-    }
+  }
 
 
 
 
-    variant_df
+  variant_df
 }
 
 
@@ -124,7 +127,7 @@ get_coveragetabular <- function(variant_df) {
         # unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])), function(x) unlist(strsplit(x,':'))[1] )),sep=':')
     }
 
-    cat("\n\n Allle information retrieved \n\n")
+    cat("\n\n All information retrieved \n\n")
     variant_passed
 
 }
@@ -132,9 +135,11 @@ get_coveragetabular <- function(variant_df) {
 
 # For 384 wells
 #' @export
-get_alleleinfotabular <- function(variant_df) {
+get_alleleinfotabular <- function(variant_df,RetrieveWellsIDs=FALSE) {
 
-
+  ##FORMAT=<ID=GT,Number=1,Type=String,Description="Unphased genotypes">
+  ##FORMAT=<ID=NR,Number=.,Type=Integer,Description="Number of reads covering variant location in this sample">
+  ##FORMAT=<ID=NV,Number=.,Type=Integer,Description="Number of reads containing variant in this sample">
     samples_id = colnames(variant_df[10:ncol(variant_df)])
 
 
@@ -142,12 +147,26 @@ get_alleleinfotabular <- function(variant_df) {
 
     newvariant_df = variant_passed[1:9]
 
-    newvariant_df["WR"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NR_", samples_id, sep = "")] > 0 & (x[paste("NR_",
+    newvariant_df["WC"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NR_", samples_id, sep = "")] > 0 & (x[paste("NR_",
         samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0)))))
     newvariant_df["WV"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_",
         samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0)))))
-    wellfraction = as.numeric(unlist(newvariant_df["WV"]/newvariant_df["WR"]))
+    newvariant_df["WR"] = newvariant_df["WC"] -  newvariant_df["WV"]
+    wellfraction = as.numeric(unlist(newvariant_df["WV"]/newvariant_df["WC"]))
     newvariant_df["WF"] = wellfraction
+
+    if(RetrieveWellsIDs){
+
+      newvariant_df["WV_IDs"] =apply(variant_passed, 1, function(x)  paste(lapply(names(which( x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_",  samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))),function(x) unlist(strsplit(x,"_"))[2]),collapse=":"))
+
+      newvariant_df["WC_IDs"] = apply(variant_passed, 1,        function(x)   paste(lapply(names(which(x[paste("NR_", samples_id, sep = "")] > 0 &                                                 (x[paste("NR_",samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))),function(x) unlist(strsplit(x,"_"))[2]),collapse=":"))
+
+      newvariant_df["WR_IDs"] = apply(newvariant_df, 1,        function(x)   paste(setdiff(unlist(strsplit(x["WC_IDs"],":")), unlist(strsplit(x["WV_IDs"],":"))),collapse=":"))
+
+      newvariant_df["WC_IDs"] = NULL
+
+
+    }
   #  newvariant_df["WFAdj"] = unlist(lapply(wellfraction, function(x) if (!is.na(x) && (x == 1))
   #      runif(1, 0.95, 1) else x))
 

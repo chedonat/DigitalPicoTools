@@ -34,7 +34,7 @@
 #' @name DigitalPicoTools
 #' @aliases DigitalPicoTools-package
 #' @keywords package
-#' @import ggplot2 Rsamtools S4Vectors
+#' @import ggplot2 Rsamtools S4Vectors VariantAnnotation
 NULL
 
 
@@ -800,7 +800,7 @@ VariantAlleleInfo <- setClass("VariantAlleleInfo", slots = character(0), prototy
 plot.VariantAlleleInfo <- function(object, region = NULL, samplingRatio = 1, value = "WellsFraction", main = "") {
 
 
-    plot_AlleleInfo(as.data.frame(object), region, samplingRatio, Value, main)
+    plot_AlleleInfo(as.data.frame(object), region, samplingRatio, value, main)
 
 
 }
@@ -820,6 +820,7 @@ VariantAlleleInfo.summary <- function() {
 #' @param OnlyPassFilter A logical value. If set to true, only the variant having their calling filter status set at 'PASS'
 #' @param FiltersToInclude A vector of character string representing a list of calling filter status. All the variant having any of them will be included in the analysis.
 #' @param FiltersToExclude A vector of character string representing a list of calling filter status. All the variant having any of them will be excluded from  the analysis given that the filte ris not included in FiltersToInclude.
+#' @param RetrieveWellsIDs A logical value specifying if the wells ID supporting the reference and  the SNP should be retrieved or not. Usefull for the Phasing analysis. (Default : FALSE)
 #' @return An object of class  \code{\link{VariantAlleleInfo}}.
 #' @examples
 #'  vcffile<-system.file('extdata','LFR_11152_Tissue_chr22.vcf.gz',package='DigitalPicoTools')
@@ -834,7 +835,7 @@ VariantAlleleInfo.summary <- function() {
 #'  # chr22_16228052_T_C   chr22 16228052   T   C   18 Q20;badReads;MQ  6  2 0.3333333  5  2 0.4000000 0.4000000
 #' @seealso \code{\link{getVariantCoverageTable}}, \code{\link{plot.VariantAlleleInfo}}, \code{\link{SampleCoverage}}, \code{\link{VariantAlleleInfo}}
 #' @export
-getVariantAlleleInfo <- function(VCFFilePath, wells_id = NULL, region = NULL, OnlyPassFilter = FALSE, FiltersToInclude = NULL, FiltersToExclude = NULL) {
+getVariantAlleleInfo <- function(VCFFilePath, wells_id = NULL, region = NULL, OnlyPassFilter = FALSE, FiltersToInclude = NULL, FiltersToExclude = NULL,RetrieveWellsIDs=FALSE) {
     # cat('\nLoading the vcf ...')
     variant_df = loading_vcf(VCFFilePath, wells_id, region)
 
@@ -850,7 +851,7 @@ getVariantAlleleInfo <- function(VCFFilePath, wells_id = NULL, region = NULL, On
 
     cat("\n Extracting table of allele count ...")
     # variantWGA_df_tabular=get_tabular(variantWGA_df_passed,wells_id)
-    variant_df_tabular = get_alleleinfotabular(variant_df_filtered)
+    variant_df_tabular = get_alleleinfotabular(variant_df_filtered,RetrieveWellsIDs=RetrieveWellsIDs)
 
     VariantAlleleInfo(Table = variant_df_tabular)
 
