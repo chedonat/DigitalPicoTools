@@ -11,10 +11,10 @@ loading_vcf <- function(vcf_file, samples_id = NULL, region = NULL) {
   #If samples_id is provided as a single integer n, the first n character of the samples_id column are considered.
 
   if (is.null(samples_id)) {
-    samples_id=samples(scanVcfHeader(vcffile))
+    samples_id=samples(scanVcfHeader(vcf_file))
   }else if(class(samples_id)=="numeric")
   {
-    samples_names=samples(scanVcfHeader(vcffile))
+    samples_names=samples(scanVcfHeader(vcf_file))
     samples_id = substr(samples_names,1,samples_id)
   }else if (9 + length(samples_id) != ncol(variant_df))
     stop(" \n Number of columns do not match number of IDs provided. Was expecting ", ncol(variant_df) - 9, " IDs, but got ", length(samples_id),
