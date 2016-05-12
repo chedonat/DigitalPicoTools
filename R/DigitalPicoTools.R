@@ -1050,6 +1050,9 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
             cat(" ", mychrom, "....")
             BAM_df_chr = BAM_df[BAM_df$rname == mychrom, ]
 
+            if(nrow(BAM_df_chr)==0)
+              next
+
             BAM_mate1_df = BAM_df_chr[BAM_df_chr$IsFirstMate == 1, ]
             BAM_mate2_df = BAM_df_chr[BAM_df_chr$IsSecondMate == 1, ]
             rownames(BAM_mate1_df) = BAM_mate1_df$qname
@@ -1083,8 +1086,16 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
             reads_fragment = reads_df[c("rstart", "rend", "length")]
             # reads_fragment['gap']=c(0,diff(as.numeric(as.character(unlist(reads_fragment['rend'])))))
             N = nrow(reads_fragment)
-            reads_fragment["gap"] = c(1e+05, as.numeric(as.character(unlist(reads_fragment[2:N, "rstart"]))) - as.numeric(as.character(unlist(reads_fragment[1:(N -
-                1), "rend"]))))
+
+            N = nrow(reads_fragment)
+            if(N==0) next
+            if(N==1){
+              reads_fragment["gap"] = 1e+05
+            }else{
+              reads_fragment["gap"] = c(1e+05, as.numeric(as.character(unlist(reads_fragment[2:N, "rstart"]))) - as.numeric(as.character(unlist(reads_fragment[1:(N -
+                                                                                                                                                                    1), "rend"]))))
+            }
+
             reads_fragment["newfragment"] = as.numeric(reads_fragment$gap > mindistance)
 
 
