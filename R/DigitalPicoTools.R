@@ -486,8 +486,8 @@ setMethod(f = "getLFRStats", signature = "LFRset", definition = function(object)
     n50totallength = frag_cumlength[frag_cumlength >= sumfrag_length/2][1]
     L50value = which(frag_length == n50value)[1]
     L50percent = L50value * 100/length(frag_length)[1]
-    stats = as.numeric(format(c(length(frag_length), n50value, n50totallength, L50value, L50percent, max(frag_length), min(frag_length), mean(frag_length),
-        median(frag_length)), digits = 2))
+    stats = as.numeric(format(c(length(frag_length), n50value, n50totallength, L50value, L50percent, max(frag_length), min(frag_length), mean(frag_length), median(frag_length)), digits = 2,scientific=F))
+
     names(stats) = c("N", "N50_value", "N50_totallength", "L50_value", "L50_percent", "Max", "Min", "Mean", "Median")
     stats
 })
