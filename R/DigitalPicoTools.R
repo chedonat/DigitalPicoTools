@@ -1165,6 +1165,132 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
 }
 
 
+#' Retrieve the LFR's mutations
+#'
+#'This function computes the list of mutations present in each Long Fragment Reads either on their Variant Allele or their reference Allele
+#'
+#' @export
+getMutationsOfLFR<-function(LFR_df, Mutations_df, LFRname, calltype=NULL)
+{
+  startpos = LFR_df[LFRname,"Start"]
+  endpos = LFR_df[LFRname,"End"]
+  chrom = as.character(LFR_df[LFRname,"Chrom"])
+  wellID= as.character(LFR_df[LFRname,"Well_ID"])
+
+  subMutations_df=Mutations_df[Mutations_df$Pos>=startpos  & Mutations_df$Pos<=endpos & Mutations_df$Chrom==chrom,]
+
+  if(is.null(calltype))
+  {
+    mutations_list=subMutations_df[!is.na(subMutations_df$WV_IDs) & (grepl(wellID,subMutations_df$WV_IDs) |grepl(wellID,subMutations_df$WR_IDs)),  ]
+  }else if(calltype=="SNP"){
+    mutations_list=subMutations_df[!is.na(subMutations_df$WV_IDs) & grepl(wellID,subMutations_df$WV_IDs),  ]
+    #mutations_list=subMutations_df[!is.na(subMutations_df$WV_IDs) & wellID %in%subMutations_df$WV_IDs),  ]
+  }else if(calltype=="REF"){
+    mutations_list=subMutations_df[grepl(wellID,subMutations_df$WR_IDs),  ]
+  }else{
+    stop("\n\n Calltype shuld be either SNP either REF \n\n ")
+  }
+
+  rownames(mutations_list)
+
+
+}
+
+
+
+#' COmpute the Phaisng Code
+#'
+#'This function computes the phasing codes of each mutations. Mutations with the same phasing code are considered as phased (e.g PH_101_0 and PH_101_0) . Mutations with the same phasing fragment code but different allele index are considered as not phased(e.g PH_101_1 and PH_101_0) .
+#'
+#' @export
+ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
+{
+
+
+ cat("\n *******\n Phasing Code computation \n ********")
+ cat("\n\t ", nrow(MutationsLFR_df)," Long Fragment Reads to scan")
+ cat("\n\t ", nrow(Mutations_set)," Mutations ot phase")
+
+  #Matrix of Phasing_Code
+
+  MutationPhasingCode_df=as.data.frame(matrix(nrow=nrow(Mutations_set),ncol=10))
+  MutationPhasingCode_df[1:2]=Mutations_set[1:2]
+  names(MutationPhasingCode_df) = c("Chrom","Pos",paste("PhasingCode",1:8,sep=""))
+  rownames(MutationPhasingCode_df) = rownames(Mutations_set)
+
+
+
+  MutationsLFR_df= MutationsLFR_df[MutationsLFR_df$MutationsOnSNP!="" | MutationsLFR_df$MutationsOnREF!="" ,]
+  cat("\n\t ", nrow(MutationsLFR_df)," Long Fragment Reads with at least one mutations")
+
+  cat("\n\t Counting the mutations per LFR")
+  MutationsLFR_df["NbOnSNP"] = unlist(lapply(as.character(unlist(MutationsLFR_df$MutationsOnSNP)), function(x) if(x!="") length(unlist(strsplit(x,":"))) else 0))
+  MutationsLFR_df["NbOnREF"] = unlist(lapply(as.character(unlist(MutationsLFR_df$MutationsOnREF)), function(x) if(x!="") length(unlist(strsplit(x,":"))) else 0))
+  MutationsLFR_df["NbMutations"] =  MutationsLFR_df["NbOnSNP"] +  MutationsLFR_df["NbOnREF"]
+
+
+  MutationsLFR_df =MutationsLFR_df[MutationsLFR_df$NbMutations>1,]
+  cat("\n\t ", nrow(MutationsLFR_df)," Long Fragment Reads with at least two mutations")
+
+
+  i <- sapply(MutationsLFR_df, is.factor)
+  MutationsLFR_df[i] <- lapply(MutationsLFR_df[i], as.character)
+
+
+
+  #Vector of LFR Flag/ We will mark all the treated LFR
+
+  nbLFR=nrow(MutationsLFR_df)
+  markedLFR<-vector("logical", nbLFR)
+  markedLFR<- rep(FALSE,nbLFR)
+  names(markedLFR)<-as.character(unlist(MutationsLFR_df["LFR_name"]))
+
+
+
+
+
+  cat("\n\nE  Extracting the phasing codes...")
+
+  LFR_lst= rownames(MutationsLFR_df)
+
+  iphase=0
+
+  stepmarker=length(LFR_lst)%/%100
+
+  for (ilfr in 1:length(LFR_lst)){
+    if((ilfr-1)%%stepmarker==0)
+      cat("\n ilfr ", ilfr, "step ", (ilfr-1)%/%stepmarker +1  )
+
+    myLFR=LFR_lst[ilfr]
+    # cat("\n>",myLFR," value", markedLFR[myLFR])
+    if(markedLFR[myLFR]){
+      # cat(" Treated")
+      next
+
+    }
+
+
+    iphase=iphase+1
+    phasingcode<-paste("PH", iphase,sep="")
+    SNPflag=1
+    markedLFR =  process_fragments(MutationsLFR_df,myLFR,phasingcode, 1,markedLFR#,MutationPhasingCode_df
+    )
+
+    #  if(ilfr==3) stop()
+  }
+
+  MutationPhasingCode_df
+}
+
+
+
+
+
+
+
+
+
+
 
 
 

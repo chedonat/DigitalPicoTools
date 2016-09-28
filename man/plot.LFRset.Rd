@@ -4,7 +4,7 @@
 \alias{plot.LFRset}
 \title{Plotting an LFR data set}
 \usage{
-plot.LFRset(object, type = "ScatterPlot", value = "Coverage",
+\method{plot}{LFRset}(object, type = "ScatterPlot", value = "Coverage",
   minlength = 10000, color = "black", main = "", well = NULL)
 }
 \arguments{

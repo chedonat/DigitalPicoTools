@@ -4,7 +4,7 @@
 \alias{plot.VariantAlleleInfo}
 \title{Plotting the variant allele information}
 \usage{
-plot.VariantAlleleInfo(object, region = NULL, samplingRatio = 1,
+\method{plot}{VariantAlleleInfo}(object, region = NULL, samplingRatio = 1,
   value = "WellsFraction", main = "")
 }
 \arguments{
