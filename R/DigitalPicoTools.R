@@ -1176,9 +1176,10 @@ ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
 {
 
 
+
  cat("\n *******\n Phasing Code computation \n ********")
  cat("\n\t ", nrow(MutationsLFR_df)," Long Fragment Reads to scan")
- cat("\n\t ", nrow(Mutations_set)," Mutations ot phase")
+ cat("\n\t ", nrow(Mutations_set)," Mutations to phase")
 
   #Matrix of Phasing_Code
 
@@ -1197,7 +1198,8 @@ ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
 
 
   MutationsLFR_df =MutationsLFR_df[MutationsLFR_df$NbMutations>1,]
-  cat("\n\t ", nrow(MutationsLFR_df)," Long Fragment Reads with at least two mutations")
+  cat("\n\t ", nrow(MutationsLFR_df)," Long Fragment Reads with at least two mutations\n ")
+
 
 
   i <- sapply(MutationsLFR_df, is.factor)
@@ -1212,13 +1214,14 @@ ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
   names(markedLFR)<-as.character(unlist(MutationsLFR_df["LFR_name"]))
 
 
-  cat("\n\nE  Extracting the phasing codes...")
+  cat("\n\nE  Extracting the phasing codes from ", nbLFR, " LFR ...")
 
   LFR_lst= rownames(MutationsLFR_df)
 
   iphase=0
 
-  stepmarker=length(LFR_lst)%/%100
+  stepmarker=max(1,length(LFR_lst)%/%100) #we take max to prevent the value to be 0.
+
 
   for (ilfr in 1:length(LFR_lst)){
     if((ilfr-1)%%stepmarker==0)

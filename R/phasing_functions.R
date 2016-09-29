@@ -144,24 +144,30 @@ process_fragments<-function(MutationsLFR_df,LFRname, phasingCode, SNPflag,marked
         }
 
         overlapmutations<-getOverlapMutations(markedLFR,SubMutationsLFR_df,LFRname, lfr)
-        lengthverlap=as.numeric(unlist(lapply(overlapmutations,length)))
-        names(lengthverlap) = names(overlapmutations)
+        lengthOverlap=as.numeric(unlist(lapply(overlapmutations,length)))
+        names(lengthOverlap) = names(overlapmutations)
 
 
-        if(max(lengthverlap)==0)
+        if(max(lengthOverlap)==0)
           next
         check=F
         if(check){
           cat("\n")
-          print(lengthverlap)
+          print(lengthOverlap)
         }
 
 
-        #   cat("\n max", max(lengthverlap),"\n")
+        #   cat("\n max", max(lengthOverlap),"\n")
 
-        #   print(lengthverlap)
+        #   print(lengthOverlap)
 
-        maxoverlap=names(lengthverlap[which.max(lengthverlap)])
+        maxoverlap=names(lengthOverlap[which.max(lengthOverlap)])
+
+        notnulloverlap=names(lengthOverlap[lengthOverlap>0])
+        if(length(intersect(c("overlap11","overlap00"),notnulloverlap ))>0 && length(intersect(c("overlap01","overlap10"),notnulloverlap ))>0 ){
+          next
+        }
+
 
         #  cat("\n treating recursively  ", lfr )
 
