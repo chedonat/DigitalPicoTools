@@ -1,4 +1,44 @@
 
+#' Retrieve the  mutations on an LFR
+#'
+#'This function computes the list of mutations present on a  Long Fragment Reads either on their Variant Allele or their reference Allele
+#'
+#' @export
+getMutationsOfLFR<-function(LFR_info, Mutations_df, calltype=NULL)
+{
+  if(is.null(LFR_info))
+    if(length(LFR_info) ==4) {
+      names(LFR_info)=c("LFR_name","Chrom","Start","End","Well_ID")
+    }else{
+      cat("\n LFR_info should contains the following", c("LFR_name ","Chrom ","Start ","End ","Well_ID "))
+    }
+
+  startpos = as.numeric(unlist(LFR_info["Start"]))
+  endpos = as.numeric(unlist(LFR_info["End"]))
+  chrom = as.character(unlist(LFR_info["Chrom"]))
+  wellID= as.character(unlist(LFR_info["Well_ID"]))
+
+  subMutations_df=Mutations_df[Mutations_df$Pos>=startpos  & Mutations_df$Pos<=endpos & Mutations_df$Chrom==chrom,]
+
+  if(is.null(calltype))
+  {
+    mutations_list=subMutations_df[!is.na(subMutations_df$WV_IDs) & (grepl(wellID,subMutations_df$WV_IDs) |grepl(wellID,subMutations_df$WR_IDs)),  ]
+  }else if(calltype=="SNP"){
+    mutations_list=subMutations_df[!is.na(subMutations_df$WV_IDs) & grepl(wellID,subMutations_df$WV_IDs),  ]
+    #mutations_list=subMutations_df[!is.na(subMutations_df$WV_IDs) & wellID %in%subMutations_df$WV_IDs),  ]
+  }else if(calltype=="REF"){
+    mutations_list=subMutations_df[grepl(wellID,subMutations_df$WR_IDs),  ]
+  }else{
+    stop("\n\n Calltype shuld be either SNP either REF \n\n ")
+  }
+
+  rownames(mutations_list)
+
+
+}
+
+
+
 
 #After the computation done with getMutationsOfLFR, simply retrieve the list of mutations in the LFR under REF or under variant.
 #' @export

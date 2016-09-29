@@ -1165,40 +1165,9 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
 }
 
 
-#' Retrieve the LFR's mutations
-#'
-#'This function computes the list of mutations present in each Long Fragment Reads either on their Variant Allele or their reference Allele
-#'
-#' @export
-getMutationsOfLFR<-function(LFR_df, Mutations_df, LFRname, calltype=NULL)
-{
-  startpos = LFR_df[LFRname,"Start"]
-  endpos = LFR_df[LFRname,"End"]
-  chrom = as.character(LFR_df[LFRname,"Chrom"])
-  wellID= as.character(LFR_df[LFRname,"Well_ID"])
-
-  subMutations_df=Mutations_df[Mutations_df$Pos>=startpos  & Mutations_df$Pos<=endpos & Mutations_df$Chrom==chrom,]
-
-  if(is.null(calltype))
-  {
-    mutations_list=subMutations_df[!is.na(subMutations_df$WV_IDs) & (grepl(wellID,subMutations_df$WV_IDs) |grepl(wellID,subMutations_df$WR_IDs)),  ]
-  }else if(calltype=="SNP"){
-    mutations_list=subMutations_df[!is.na(subMutations_df$WV_IDs) & grepl(wellID,subMutations_df$WV_IDs),  ]
-    #mutations_list=subMutations_df[!is.na(subMutations_df$WV_IDs) & wellID %in%subMutations_df$WV_IDs),  ]
-  }else if(calltype=="REF"){
-    mutations_list=subMutations_df[grepl(wellID,subMutations_df$WR_IDs),  ]
-  }else{
-    stop("\n\n Calltype shuld be either SNP either REF \n\n ")
-  }
-
-  rownames(mutations_list)
 
 
-}
-
-
-
-#' COmpute the Phaisng Code
+#' Compute the Phaisng Code
 #'
 #'This function computes the phasing codes of each mutations. Mutations with the same phasing code are considered as phased (e.g PH_101_0 and PH_101_0) . Mutations with the same phasing fragment code but different allele index are considered as not phased(e.g PH_101_1 and PH_101_0) .
 #'
@@ -1213,12 +1182,10 @@ ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
 
   #Matrix of Phasing_Code
 
-  MutationPhasingCode_df=as.data.frame(matrix(nrow=nrow(Mutations_set),ncol=10))
-  MutationPhasingCode_df[1:2]=Mutations_set[1:2]
-  names(MutationPhasingCode_df) = c("Chrom","Pos",paste("PhasingCode",1:8,sep=""))
-  rownames(MutationPhasingCode_df) = rownames(Mutations_set)
-
-
+  MutationPhasingCode_df<<-as.data.frame(matrix(nrow=nrow(Mutations_set),ncol=5))
+  MutationPhasingCode_df[1:2]<<-Mutations_set[1:2]
+  names(MutationPhasingCode_df) <<- c("Chrom","Pos",paste("PhasingCode",1:3,sep=""))
+  rownames(MutationPhasingCode_df) <<- rownames(Mutations_set)
 
   MutationsLFR_df= MutationsLFR_df[MutationsLFR_df$MutationsOnSNP!="" | MutationsLFR_df$MutationsOnREF!="" ,]
   cat("\n\t ", nrow(MutationsLFR_df)," Long Fragment Reads with at least one mutations")
@@ -1237,16 +1204,12 @@ ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
   MutationsLFR_df[i] <- lapply(MutationsLFR_df[i], as.character)
 
 
-
   #Vector of LFR Flag/ We will mark all the treated LFR
 
   nbLFR=nrow(MutationsLFR_df)
   markedLFR<-vector("logical", nbLFR)
   markedLFR<- rep(FALSE,nbLFR)
   names(markedLFR)<-as.character(unlist(MutationsLFR_df["LFR_name"]))
-
-
-
 
 
   cat("\n\nE  Extracting the phasing codes...")
@@ -1259,7 +1222,7 @@ ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
 
   for (ilfr in 1:length(LFR_lst)){
     if((ilfr-1)%%stepmarker==0)
-      cat("\n ilfr ", ilfr, "step ", (ilfr-1)%/%stepmarker +1  )
+      cat("\n LFR No ", ilfr, "step ", (ilfr-1)%/%stepmarker +1,  " out of ", 100)
 
     myLFR=LFR_lst[ilfr]
     # cat("\n>",myLFR," value", markedLFR[myLFR])
@@ -1271,7 +1234,7 @@ ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
 
 
     iphase=iphase+1
-    phasingcode<-paste("PH", iphase,sep="")
+    phasingcode<-paste("Phase_", iphase,sep="")
     SNPflag=1
     markedLFR =  process_fragments(MutationsLFR_df,myLFR,phasingcode, 1,markedLFR#,MutationPhasingCode_df
     )
@@ -1282,6 +1245,60 @@ ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
   MutationPhasingCode_df
 }
 
+
+
+
+
+#' Compute the Phaisng Code
+#'
+#'This function computes the phasing codes of each mutations. Mutations with the same phasing code are considered as phased (e.g PH_101_0 and PH_101_0) . Mutations with the same phasing fragment code but different allele index are considered as not phased(e.g PH_101_1 and PH_101_0) .
+#'
+#' @export
+getPhaseInformation<-function(LFRset,MutationsAlleInfoset, calltype=NULL, OnlyPassFilter = FALSE  )
+{
+
+  LFR_df= LFRset
+  Mutations_df=MutationsAlleInfoset
+
+  cat("\n\nComputing the list of mutations called on each LFR as SNP...")
+  LFR_df["MutationsOnSNP"]=  unlist(lapply(as.character(unlist(LFR_df$LFR_name)), function(x) paste(getMutationsOfLFR(LFR_df, Mutations_df,x,"SNP" ),collapse=":")))
+  cat("\n\nComputing the list of mutations called on each LFR as REF...")
+  LFR_df["MutationsOnREF"]=  unlist(lapply(as.character(unlist(LFR_df$LFR_name)), function(x) paste(getMutationsOfLFR(LFR_df, Mutations_df,x,"REF" ),collapse=":")))
+
+
+
+  #getMutationsOfLFR<-function(LFR_df, Mutations_df, LFRname, calltype=NULL)
+  #ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
+}
+
+
+
+#' Retrieve the  mutations on each LFR of an LFRSet
+#'
+#'This function computes the list of mutations present on a  Long Fragment Reads either on their Variant Allele or their reference Allele
+#'
+#' @export
+getMutationsOfLFRSet<-function(LFRset, MutationsAlleInfoset, progress=F)
+{
+  LFR_df= LFRset
+  Mutations_df=MutationsAlleInfoset
+if(progress){
+  nbLFR=nrow(LFR_df)
+  step=round(nbLFR/100)
+}
+  cat("\n\nComputing the list of mutations called on each LFR ...")
+  for(irow in 1:nrow(LFR_df)){
+    LFR_df[irow,"MutationsOnSNP"] = paste(getMutationsOfLFR(LFR_df[irow,], Mutations_df,"SNP" ),collapse=":")
+    LFR_df[irow,"MutationsOnREF"] = paste(getMutationsOfLFR(LFR_df[irow,],  Mutations_df,"REF" ),collapse=":")
+    if(progress)
+      if(irow %% step ==0)
+        cat("\n",round(irow/step),"- Processing LFR ", irow )
+  }
+
+  LFR_df
+
+
+}
 
 
 

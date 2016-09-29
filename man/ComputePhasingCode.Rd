@@ -2,7 +2,7 @@
 % Please edit documentation in R/DigitalPicoTools.R
 \name{ComputePhasingCode}
 \alias{ComputePhasingCode}
-\title{COmpute the Phaisng Code}
+\title{Compute the Phaisng Code}
 \usage{
 ComputePhasingCode(MutationsLFR_df, Mutations_set)
 }
