@@ -1172,13 +1172,13 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
 #'This function computes the phasing codes of each mutations. Mutations with the same phasing code are considered as phased (e.g PH_101_0 and PH_101_0) . Mutations with the same phasing fragment code but different allele index are considered as not phased(e.g PH_101_1 and PH_101_0) .
 #'
 #' @export
-ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
+ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set)
 {
 
 
 
  cat("\n *******\n Phasing Code computation \n ********")
- cat("\n\t ", nrow(MutationsLFR_df)," Long Fragment Reads to scan")
+ cat("\n\t ", nrow(LFR_withMutations_df)," Long Fragment Reads to scan")
  cat("\n\t ", nrow(Mutations_set)," Mutations to phase")
 
   #Matrix of Phasing_Code
@@ -1188,35 +1188,37 @@ ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
   names(MutationPhasingCode_df) <<- c("Chrom","Pos",paste("PhasingCode",1:3,sep=""))
   rownames(MutationPhasingCode_df) <<- rownames(Mutations_set)
 
-  MutationsLFR_df= MutationsLFR_df[MutationsLFR_df$MutationsOnSNP!="" | MutationsLFR_df$MutationsOnREF!="" ,]
-  cat("\n\t ", nrow(MutationsLFR_df)," Long Fragment Reads with at least one mutations")
+  list_of_mutations_to_phase=rownames(MutationPhasingCode_df)
+
+  LFR_withMutations_df= LFR_withMutations_df[LFR_withMutations_df$MutationsOnSNP!="" | LFR_withMutations_df$MutationsOnREF!="" ,]
+  cat("\n\t ", nrow(LFR_withMutations_df)," Long Fragment Reads with at least one mutations")
 
   cat("\n\t Counting the mutations per LFR")
-  MutationsLFR_df["NbOnSNP"] = unlist(lapply(as.character(unlist(MutationsLFR_df$MutationsOnSNP)), function(x) if(x!="") length(unlist(strsplit(x,":"))) else 0))
-  MutationsLFR_df["NbOnREF"] = unlist(lapply(as.character(unlist(MutationsLFR_df$MutationsOnREF)), function(x) if(x!="") length(unlist(strsplit(x,":"))) else 0))
-  MutationsLFR_df["NbMutations"] =  MutationsLFR_df["NbOnSNP"] +  MutationsLFR_df["NbOnREF"]
+  LFR_withMutations_df["NbOnSNP"] = unlist(lapply(as.character(unlist(LFR_withMutations_df$MutationsOnSNP)), function(x) if(x!="") length(unlist(strsplit(x,":"))) else 0))
+  LFR_withMutations_df["NbOnREF"] = unlist(lapply(as.character(unlist(LFR_withMutations_df$MutationsOnREF)), function(x) if(x!="") length(unlist(strsplit(x,":"))) else 0))
+  LFR_withMutations_df["NbMutations"] =  LFR_withMutations_df["NbOnSNP"] +  LFR_withMutations_df["NbOnREF"]
 
 
-  MutationsLFR_df =MutationsLFR_df[MutationsLFR_df$NbMutations>1,]
-  cat("\n\t ", nrow(MutationsLFR_df)," Long Fragment Reads with at least two mutations\n ")
+  LFR_withMutations_df =LFR_withMutations_df[LFR_withMutations_df$NbMutations>1,]
+  cat("\n\t ", nrow(LFR_withMutations_df)," Long Fragment Reads with at least two mutations\n ")
 
 
 
-  i <- sapply(MutationsLFR_df, is.factor)
-  MutationsLFR_df[i] <- lapply(MutationsLFR_df[i], as.character)
+  i <- sapply(LFR_withMutations_df, is.factor)
+  LFR_withMutations_df[i] <- lapply(LFR_withMutations_df[i], as.character)
 
 
   #Vector of LFR Flag/ We will mark all the treated LFR
 
-  nbLFR=nrow(MutationsLFR_df)
+  nbLFR=nrow(LFR_withMutations_df)
   markedLFR<-vector("logical", nbLFR)
   markedLFR<- rep(FALSE,nbLFR)
-  names(markedLFR)<-as.character(unlist(MutationsLFR_df["LFR_name"]))
+  names(markedLFR)<-as.character(unlist(LFR_withMutations_df["LFR_name"]))
 
 
   cat("\n\nE  Extracting the phasing codes from ", nbLFR, " LFR ...")
 
-  LFR_lst= rownames(MutationsLFR_df)
+  LFR_lst= rownames(LFR_withMutations_df)
 
   iphase=0
 
@@ -1239,7 +1241,7 @@ ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
     iphase=iphase+1
     phasingcode<-paste("Phase_", iphase,sep="")
     SNPflag=1
-    markedLFR =  process_fragments(MutationsLFR_df,myLFR,phasingcode, 1,markedLFR#,MutationPhasingCode_df
+    markedLFR =  process_fragments(LFR_withMutations_df,myLFR,phasingcode, 1,markedLFR,list_of_mutations_to_phase#,MutationPhasingCode_df
     )
 
     #  if(ilfr==3) stop()
@@ -1271,7 +1273,7 @@ getPhaseInformation<-function(LFRset,MutationsAlleInfoset, calltype=NULL, OnlyPa
 
 
   #getMutationsOfLFR<-function(LFR_df, Mutations_df, LFRname, calltype=NULL)
-  #ComputePhasingCode<-function(MutationsLFR_df,Mutations_set)
+  #ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set)
 }
 
 

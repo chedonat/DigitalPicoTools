@@ -42,18 +42,21 @@ getMutationsOfLFR<-function(LFR_info, Mutations_df, calltype=NULL)
 
 #After the computation done with getMutationsOfLFR, simply retrieve the list of mutations in the LFR under REF or under variant.
 #' @export
-getMutationsOfLFR2<-function(MutationsLFR_df,LFRname, calltype=NULL){
+getMutationsOfLFR2<-function(LFR_withMutations_df,LFRname, list_of_mutations_to_phase, calltype=NULL){
 
   #cat("\n\n",LFRname,"\n\n")
   if(calltype=="SNP")
-    mutations_list=MutationsLFR_df[LFRname,"MutationsOnSNP"]
+    mutations_list=LFR_withMutations_df[LFRname,"MutationsOnSNP"]
   if(calltype=="REF")
-    mutations_list=MutationsLFR_df[LFRname,"MutationsOnREF"]
+    mutations_list=LFR_withMutations_df[LFRname,"MutationsOnREF"]
   mutations=""
 
 
   if(mutations_list !="")
     mutations=unlist(strsplit(mutations_list,":"))
+  #We need to consider only  mutations which belong to list_of_mutations_to_phase
+  mutations=intersect(mutations,list_of_mutations_to_phase)
+
   mutations
 
 }
@@ -67,34 +70,34 @@ AssignPhasingCode<-function(Mutation_list, phasing_code, SNPflag#,MutationPhasin
 }
 
 #' @export
-getOverlapLFR<-function(MutationsLFR_df,LFRname)
+getOverlapLFR<-function(LFR_withMutations_df,LFRname)
 {
-  #rownames(MutationsLFR_df) = MutationsLFR_df$LFR_name
+  #rownames(LFR_withMutations_df) = LFR_withMutations_df$LFR_name
   LFRname_elements=unlist(strsplit(LFRname,"_"))
-  #   startpos = MutationsLFR_df[LFRname,"Start"]
-  #   endpos = MutationsLFR_df[LFRname,"End"]
-  #   chrom = as.character(MutationsLFR_df[LFRname,"Chrom"])
-  #   wellID= as.character(MutationsLFR_df[LFRname,"Well_ID"])
+  #   startpos = LFR_withMutations_df[LFRname,"Start"]
+  #   endpos = LFR_withMutations_df[LFRname,"End"]
+  #   chrom = as.character(LFR_withMutations_df[LFRname,"Chrom"])
+  #   wellID= as.character(LFR_withMutations_df[LFRname,"Well_ID"])
   startpos = as.numeric(LFRname_elements[3])
   endpos = as.numeric(LFRname_elements[4])
   chrom = LFRname_elements[2]
   wellID= LFRname_elements[1]
 
-  Overlap_LFR_lst = MutationsLFR_df[(MutationsLFR_df$Start >= startpos  & MutationsLFR_df$Start <= endpos) &
-                             (MutationsLFR_df$End >= startpos  & MutationsLFR_df$End <= endpos) &
-                             MutationsLFR_df$LFR_name != LFRname ,]
+  Overlap_LFR_lst = LFR_withMutations_df[(LFR_withMutations_df$Start >= startpos  & LFR_withMutations_df$Start <= endpos) &
+                             (LFR_withMutations_df$End >= startpos  & LFR_withMutations_df$End <= endpos) &
+                             LFR_withMutations_df$LFR_name != LFRname ,]
 
   as.character(Overlap_LFR_lst$LFR_name)
 }
 
 #' @export
-getOverlapMutations<-function(markedLFR,MutationsLFR_df,LFRname1, LFRname2)
+getOverlapMutations<-function(markedLFR,LFR_withMutations_df,LFRname1, LFRname2,list_of_mutations_to_phase)
 {
 
-  mutation_list1_snp= getMutationsOfLFR2(MutationsLFR_df,LFRname1,"SNP")
-  mutation_list2_snp= getMutationsOfLFR2(MutationsLFR_df,LFRname2,"SNP")
-  mutation_list1_ref= getMutationsOfLFR2(MutationsLFR_df,LFRname1,"REF")
-  mutation_list2_ref= getMutationsOfLFR2(MutationsLFR_df,LFRname2,"REF")
+  mutation_list1_snp= getMutationsOfLFR2(LFR_withMutations_df,LFRname1,list_of_mutations_to_phase,"SNP")
+  mutation_list2_snp= getMutationsOfLFR2(LFR_withMutations_df,LFRname2,list_of_mutations_to_phase,"SNP")
+  mutation_list1_ref= getMutationsOfLFR2(LFR_withMutations_df,LFRname1,list_of_mutations_to_phase,"REF")
+  mutation_list2_ref= getMutationsOfLFR2(LFR_withMutations_df,LFRname2,list_of_mutations_to_phase,"REF")
 
   if(length(c(mutation_list2_snp,mutation_list2_ref)==0))
    # markedLFR[LFRname2]<<-TRUE
@@ -113,7 +116,7 @@ getOverlapMutations<-function(markedLFR,MutationsLFR_df,LFRname1, LFRname2)
 }
 
 #' @export
-process_fragments<-function(MutationsLFR_df,LFRname, phasingCode, SNPflag,markedLFR#,MutationPhasingCode_df
+process_fragments<-function(LFR_withMutations_df,LFRname, phasingCode, SNPflag,markedLFR,list_of_mutations_to_phase#,MutationPhasingCode_df
 )
 {
   # cat("\n lfr is ", LFRname)
@@ -124,8 +127,8 @@ process_fragments<-function(MutationsLFR_df,LFRname, phasingCode, SNPflag,marked
 
     # cat("\n markedLFR ",LFRname, " value:",markedLFR[LFRname] )
 
-    mutations_snp=getMutationsOfLFR2(MutationsLFR_df,LFRname, "SNP")
-    mutations_ref=getMutationsOfLFR2(MutationsLFR_df,LFRname, "REF")
+    mutations_snp=getMutationsOfLFR2(LFR_withMutations_df,LFRname, list_of_mutations_to_phase,"SNP")
+    mutations_ref=getMutationsOfLFR2(LFR_withMutations_df,LFRname,list_of_mutations_to_phase, "REF")
 
     if(length(c(mutations_snp,mutations_ref))!=0){
       AssignPhasingCode(mutations_snp,phasingCode, SNPflag#,MutationPhasingCode_df
@@ -133,17 +136,21 @@ process_fragments<-function(MutationsLFR_df,LFRname, phasingCode, SNPflag,marked
       AssignPhasingCode(mutations_ref,phasingCode, (1-SNPflag)#, MutationPhasingCode_df
       )
 
-      overlapLFR_lst<-getOverlapLFR(MutationsLFR_df,LFRname)
+      #Get the list of Overlaping LFR
+      overlapLFR_lst<-getOverlapLFR(LFR_withMutations_df,LFRname)
       # cat("\n number overlap ", length(overlapLFR_lst))
+      #create a submutation of LFR and the overlaping LFR
+      SubLFR_withMutations_df =LFR_withMutations_df[unique(c(LFRname,overlapLFR_lst)),]
 
-      SubMutationsLFR_df =MutationsLFR_df[unique(c(LFRname,overlapLFR_lst)),]
+      #For each non processed LFR here goes the recurrrence
       for (lfr in overlapLFR_lst){
         if(markedLFR[lfr]){
           # cat(" Ttreated")
           next
         }
 
-        overlapmutations<-getOverlapMutations(markedLFR,SubMutationsLFR_df,LFRname, lfr)
+        #Get the list of Overlaping Mutations
+        overlapmutations<-getOverlapMutations(markedLFR,SubLFR_withMutations_df,LFRname, lfr,list_of_mutations_to_phase)
         lengthOverlap=as.numeric(unlist(lapply(overlapmutations,length)))
         names(lengthOverlap) = names(overlapmutations)
 
@@ -164,6 +171,7 @@ process_fragments<-function(MutationsLFR_df,LFRname, phasingCode, SNPflag,marked
         maxoverlap=names(lengthOverlap[which.max(lengthOverlap)])
 
         notnulloverlap=names(lengthOverlap[lengthOverlap>0])
+        #If both same allele and different allele present skip
         if(length(intersect(c("overlap11","overlap00"),notnulloverlap ))>0 && length(intersect(c("overlap01","overlap10"),notnulloverlap ))>0 ){
           next
         }
@@ -172,10 +180,10 @@ process_fragments<-function(MutationsLFR_df,LFRname, phasingCode, SNPflag,marked
         #  cat("\n treating recursively  ", lfr )
 
         if(maxoverlap %in% c("overlap11","overlap00")){
-          markedLFR =  process_fragments(MutationsLFR_df,lfr, phasingCode,SNPflag,markedLFR#,MutationPhasingCode_df
+          markedLFR =  process_fragments(LFR_withMutations_df,lfr, phasingCode,SNPflag,markedLFR, list_of_mutations_to_phase#,MutationPhasingCode_df
           )
         }else if (maxoverlap %in% c("overlap10","overlap01")){
-          markedLFR =   process_fragments(MutationsLFR_df,lfr, phasingCode,(1-SNPflag),markedLFR#,MutationPhasingCode_df
+          markedLFR =   process_fragments(LFR_withMutations_df,lfr, phasingCode,(1-SNPflag),markedLFR, list_of_mutations_to_phase#,MutationPhasingCode_df
           )
         }else{
           cat(" \n unknown maxoverlap : ",maxoverlap )
