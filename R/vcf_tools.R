@@ -157,9 +157,9 @@ get_alleleinfotabular <- function(variant_df,RetrieveWellsIDs=FALSE) {
 
     if(RetrieveWellsIDs){
 
-      newvariant_df["WV_IDs"] =apply(variant_passed, 1, function(x)  paste(lapply(names(which( x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_",  samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))),function(x) unlist(strsplit(x,"_"))[2]),collapse=":"))
+      newvariant_df["WV_IDs"] =apply(variant_passed, 1, function(x)  paste(lapply(names(which( x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_",  samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))),function(x) substr(x,4,nchar(x))),collapse=":"))
 
-      newvariant_df["WC_IDs"] = apply(variant_passed, 1,        function(x)   paste(lapply(names(which(x[paste("NR_", samples_id, sep = "")] > 0 &                                                 (x[paste("NR_",samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))),function(x) unlist(strsplit(x,"_"))[2]),collapse=":"))
+      newvariant_df["WC_IDs"] = apply(variant_passed, 1,        function(x)   paste(lapply(names(which(x[paste("NR_", samples_id, sep = "")] > 0 &                                                 (x[paste("NR_",samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))),function(x) substr(x,4,nchar(x))),collapse=":"))
 
       newvariant_df["WR_IDs"] = apply(newvariant_df, 1,        function(x)   paste(setdiff(unlist(strsplit(x["WC_IDs"],":")), unlist(strsplit(x["WV_IDs"],":"))),collapse=":"))
 
