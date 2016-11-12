@@ -835,7 +835,7 @@ VariantAlleleInfo.summary <- function() {
 #'  # chr22_16228052_T_C   chr22 16228052   T   C   18 Q20;badReads;MQ  6  2 0.3333333  5  2 0.4000000 0.4000000
 #' @seealso \code{\link{getVariantCoverageTable}}, \code{\link{plot.VariantAlleleInfo}}, \code{\link{SampleCoverage}}, \code{\link{VariantAlleleInfo}}
 #' @export
-getVariantAlleleInfo <- function(VCFFilePath, wells_id = NULL, region = NULL, part=NULL, OnlyPassFilter = FALSE, FiltersToInclude = NULL, FiltersToExclude = NULL,RetrieveWellsIDs=FALSE) {
+getVariantAlleleInfo <- function(VCFFilePath, wells_id = NULL, region = NULL, part=NULL, OnlyPassFilter = FALSE, FiltersToInclude = NULL, FiltersToExclude = NULL,RetrieveIDs=FALSE,mode="wells") {
     # cat('\nLoading the vcf ...')
     variant_df = loading_vcf(VCFFilePath, wells_id, region)
 
@@ -853,6 +853,8 @@ getVariantAlleleInfo <- function(VCFFilePath, wells_id = NULL, region = NULL, pa
     start_position=1
     end_position=nrow(variant_df)
 
+    cat("/n number of rows is : ", nrow(variant_df))
+
     if (!is.null(part)){
       number_of_parts=as.numeric(unlist(strsplit(part,":"))[2])
       part_index=as.numeric(unlist(strsplit(part,":"))[1])
@@ -867,12 +869,14 @@ getVariantAlleleInfo <- function(VCFFilePath, wells_id = NULL, region = NULL, pa
     }
 
 
+    variant_df = variant_df[start_position:end_position,]
     cat("\n Extracting table of allele count ...")
     cat("\n \t ",end_position-start_position +1 ," mutations to process : From mutation :", start_position, " to mutation ", end_position," ...")
     # variantWGA_df_tabular=get_tabular(variantWGA_df_passed,wells_id)
-    variant_df_tabular = get_alleleinfotabular(variant_df[start_position:end_position,],RetrieveWellsIDs=RetrieveWellsIDs)
 
-    VariantAlleleInfo(Table = variant_df_tabular)
+    variant_df = get_alleleinfotabular(variant_df,RetrieveIDs=RetrieveIDs, mode=mode)
+
+    VariantAlleleInfo(Table = variant_df)
 
 }
 

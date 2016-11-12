@@ -94,8 +94,7 @@ get_coveragetabular <- function(variant_df) {
     variant_passed["TC"] = unlist(lapply(unlist(variant_df["Info"]), function(x) as.numeric(unlist(strsplit(unlist(strsplit(as.character(x), ";"))[unlist(lapply(unlist(strsplit(as.character(x),
         ";")), function(y) grepl("TC=", y)))], "="))[2])))
     cat("\nTR...")
-    variant_passed["TR"] = unlist(lapply(unlist(variant_df["Info"]), function(x) as.numeric(unlist(strsplit(unlist(strsplit(as.character(x), ";"))[unlist(lapply(unlist(strsplit(as.character(x),
-        ";")), function(y) grepl("TR=", y)))], "="))[2])))
+    variant_passed["TR"] = unlist(lapply(unlist(variant_df["Info"]), function(x) as.numeric(unlist(strsplit(unlist(strsplit(unlist(strsplit(as.character(x), ";"))[unlist(lapply(unlist(strsplit(as.character(x),";")), function(y) grepl("TR=", y)))], "="))[2],","))[1])))
     cat("\nAF...")
     variant_passed["AF"] = variant_passed["TR"]/variant_passed["TC"]
 
@@ -108,6 +107,8 @@ get_coveragetabular <- function(variant_df) {
 
       values=unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])),
                            function(x) unlist(strsplit(x, ":"))[c(1, 5, 6)]))
+
+      values=unlist(lapply(values,function(x) unlist(strsplit(x,","))[1]))
 
       variant_passed[paste(c("GT_", "NR_", "NV_"), samples_id[isample], sep = "")] = matrix(values, ncol=3,byrow=T)
 
@@ -135,7 +136,7 @@ get_coveragetabular <- function(variant_df) {
 
 # For 384 wells
 #' @export
-get_alleleinfotabular <- function(variant_df,RetrieveWellsIDs=FALSE) {
+get_alleleinfotabular <- function(variant_df,RetrieveIDs=FALSE, mode="wells") {
 
   ##FORMAT=<ID=GT,Number=1,Type=String,Description="Unphased genotypes">
   ##FORMAT=<ID=NR,Number=.,Type=Integer,Description="Number of reads covering variant location in this sample">
@@ -145,32 +146,93 @@ get_alleleinfotabular <- function(variant_df,RetrieveWellsIDs=FALSE) {
 
     variant_passed = get_coveragetabular(variant_df)
 
+#     newvariant_df = variant_passed[1:9]
+#
+#     newvariant_df["WC"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NR_", samples_id, sep = "")] > 0 & (x[paste("NR_",
+#         samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0)))))
+#     newvariant_df["WV"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_",
+#         samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0)))))
+#     newvariant_df["WR"] = newvariant_df["WC"] -  newvariant_df["WV"]
+#     wellfraction = as.numeric(unlist(newvariant_df["WV"]/newvariant_df["WC"]))
+#     newvariant_df["WF"] = wellfraction
+#
+#     if(RetrieveWellsIDs){
+#
+#       newvariant_df["WV_IDs"] =apply(variant_passed, 1, function(x)  paste(lapply(names(which( x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_",  samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))),function(x) substr(x,4,nchar(x))),collapse=":"))
+#
+#       newvariant_df["WC_IDs"] = apply(variant_passed, 1,        function(x)   paste(lapply(names(which(x[paste("NR_", samples_id, sep = "")] > 0 &                                                 (x[paste("NR_",samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))),function(x) substr(x,4,nchar(x))),collapse=":"))
+#
+#       newvariant_df["WR_IDs"] = apply(newvariant_df, 1,        function(x)   paste(setdiff(unlist(strsplit(x["WC_IDs"],":")), unlist(strsplit(x["WV_IDs"],":"))),collapse=":"))
+#
+#       newvariant_df["WC_IDs"] = NULL
+#
+#
+#     }
+#   #  newvariant_df["WFAdj"] = unlist(lapply(wellfraction, function(x) if (!is.na(x) && (x == 1))
+#   #      runif(1, 0.95, 1) else x))
+#
+#     newvariant_df
+
+
+
+
     newvariant_df = variant_passed[1:9]
 
-    newvariant_df["WC"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NR_", samples_id, sep = "")] > 0 & (x[paste("NR_",
-        samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0)))))
-    newvariant_df["WV"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_",
-        samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0)))))
-    newvariant_df["WR"] = newvariant_df["WC"] -  newvariant_df["WV"]
-    wellfraction = as.numeric(unlist(newvariant_df["WV"]/newvariant_df["WC"]))
-    newvariant_df["WF"] = wellfraction
-
-    if(RetrieveWellsIDs){
-
-      newvariant_df["WV_IDs"] =apply(variant_passed, 1, function(x)  paste(lapply(names(which( x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_",  samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))),function(x) substr(x,4,nchar(x))),collapse=":"))
-
-      newvariant_df["WC_IDs"] = apply(variant_passed, 1,        function(x)   paste(lapply(names(which(x[paste("NR_", samples_id, sep = "")] > 0 &                                                 (x[paste("NR_",samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))),function(x) substr(x,4,nchar(x))),collapse=":"))
-
-      newvariant_df["WR_IDs"] = apply(newvariant_df, 1,        function(x)   paste(setdiff(unlist(strsplit(x["WC_IDs"],":")), unlist(strsplit(x["WV_IDs"],":"))),collapse=":"))
-
-      newvariant_df["WC_IDs"] = NULL
 
 
-    }
-  #  newvariant_df["WFAdj"] = unlist(lapply(wellfraction, function(x) if (!is.na(x) && (x == 1))
-  #      runif(1, 0.95, 1) else x))
+    if(mode=="wells"){
+      newvariant_df["WC"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NR_", samples_id, sep = "")] > 0 & (x[paste("NR_",  samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0)))))
+      newvariant_df["WV"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_",   samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0)))))
+      newvariant_df["WR"] = newvariant_df["WC"] -  newvariant_df["WV"]
+      wellfraction = as.numeric(unlist(newvariant_df["WV"]/newvariant_df["WC"]))
+      newvariant_df["WF"] = wellfraction
+
+      if(RetrieveIDs){
+
+        newvariant_df["WV_IDs"] =apply(variant_passed, 1, function(x)  paste(lapply(names(which( x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_",  samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))),function(x) substr(x,4,nchar(x))),collapse=":"))
+
+        newvariant_df["WC_IDs"] = apply(variant_passed, 1,        function(x)   paste(lapply(names(which(x[paste("NR_", samples_id, sep = "")] > 0 &                                                 (x[paste("NR_",samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))),function(x) substr(x,4,nchar(x))),collapse=":"))
+
+        newvariant_df["WR_IDs"] = apply(newvariant_df, 1,        function(x)   paste(setdiff(unlist(strsplit(x["WC_IDs"],":")), unlist(strsplit(x["WV_IDs"],":"))),collapse=":"))
+
+        newvariant_df["WC_IDs"] = NULL
+
+        newvariant_df["WV_ReadsCount"] =apply(variant_passed, 1, function(x)  paste(as.character(unlist(x[paste("NV_", samples_id, sep = "")][which( x[paste("NV_", samples_id, sep = "")] > 0 & (x[paste("NR_",  samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))])),collapse=":"))
+
+        #  newvariant_df["WC_ReadsCount"] = apply(variant_passed, 1,        function(x)   paste(as.character(unlist(x[paste("NR_", samples_id, sep = "")][which( x[paste("NR_", samples_id, sep = "")] > 0 )])),collapse=":"))
+
+
+      }
+    }else if (mode=="samples"){
+
+      newvariant_df["SC"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NR_", samples_id, sep = "")] > 0 ))))
+      newvariant_df["SV"] = as.numeric(unlist(apply(variant_passed, 1, function(x) sum(x[paste("NV_", samples_id, sep = "")] > 0 ))))
+      newvariant_df["SR"] = newvariant_df["SC"] -  newvariant_df["SV"]
+      wellfraction = as.numeric(unlist(newvariant_df["SV"]/newvariant_df["SC"]))
+      newvariant_df["SF"] = wellfraction
+
+      if(RetrieveIDs){
+
+        newvariant_df["SV_IDs"] =apply(variant_passed, 1, function(x)  paste(lapply(names(which( x[paste("NV_", samples_id, sep = "")] > 0 )),function(x) substr(x,4,nchar(x))),collapse=":"))
+
+        newvariant_df["SC_IDs"] = apply(variant_passed, 1,        function(x)   paste(lapply(names(which(x[paste("NR_", samples_id, sep = "")] > 0 )),function(x) substr(x,4,nchar(x))),collapse=":"))
+
+        newvariant_df["SR_IDs"] = apply(newvariant_df, 1,        function(x)   paste(setdiff(unlist(strsplit(x["SC_IDs"],":")), unlist(strsplit(x["SV_IDs"],":"))),collapse=":"))
+
+        newvariant_df["SC_IDs"] = NULL
+
+        newvariant_df["SV_ReadsCount"] =apply(variant_passed, 1, function(x)  paste(as.character(unlist(x[paste("NV_", samples_id, sep = "")][which( x[paste("NV_", samples_id, sep = "")] > 0 )])),collapse=":"))
+
+        newvariant_df["SC_ReadsCount"] = apply(variant_passed, 1,        function(x)   paste(as.character(unlist(x[paste("NR_", samples_id, sep = "")][which(x[paste("NR_", samples_id, sep = "")] > 0 &                                                 (x[paste("NR_",samples_id, sep = "")] == x[paste("NV_", samples_id, sep = "")] | x[paste("NV_", samples_id, sep = "")] == 0))])),collapse=":"))
+   }
+
+    }else{
+   stop("\n\n parameter mode should be either wells either samples")
+ }
 
     newvariant_df
+
+
 
 }
 
