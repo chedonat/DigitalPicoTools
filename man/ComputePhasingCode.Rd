@@ -4,7 +4,7 @@
 \alias{ComputePhasingCode}
 \title{Compute the Phaisng Code}
 \usage{
-ComputePhasingCode(MutationsLFR_df, Mutations_set)
+ComputePhasingCode(LFR_withMutations_df, Mutations_set, mode = "recursive")
 }
 \description{
 This function computes the phasing codes of each mutations. Mutations with the same phasing code are considered as phased (e.g PH_101_0 and PH_101_0) . Mutations with the same phasing fragment code but different allele index are considered as not phased(e.g PH_101_1 and PH_101_0) .

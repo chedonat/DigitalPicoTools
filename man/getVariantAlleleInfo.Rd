@@ -5,8 +5,8 @@
 \title{Retrieveing variants genomic and alleles count information}
 \usage{
 getVariantAlleleInfo(VCFFilePath, wells_id = NULL, region = NULL,
-  OnlyPassFilter = FALSE, FiltersToInclude = NULL,
-  FiltersToExclude = NULL, RetrieveWellsIDs = FALSE)
+  part = NULL, OnlyPassFilter = FALSE, FiltersToInclude = NULL,
+  FiltersToExclude = NULL, RetrieveIDs = FALSE, mode = "wells")
 }
 \arguments{
 \item{VCFFilePath}{A character string representing the path to a VCF file obtained from an LFR experiment study. The file should contains one genotype information column per well sample.}

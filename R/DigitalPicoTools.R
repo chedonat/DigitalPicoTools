@@ -1195,14 +1195,31 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
 #'This function computes the phasing codes of each mutations. Mutations with the same phasing code are considered as phased (e.g PH_101_0 and PH_101_0) . Mutations with the same phasing fragment code but different allele index are considered as not phased(e.g PH_101_1 and PH_101_0) .
 #'
 #' @export
-ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set)
+ComputePhasingCode_recursive<-function(LFR_withMutations_df,Mutations_set)
 {
+
+
+
+
+
 
 
 
  cat("\n *******\n Phasing Code computation \n ********")
  cat("\n\t ", nrow(LFR_withMutations_df)," Long Fragment Reads to scan")
  cat("\n\t ", nrow(Mutations_set)," Mutations to phase")
+
+
+
+ cat("\n\n Remove mutations with no wells count supporting the variant...")
+ #This is odd, there are some mutations with no well count supporting the variant? We remove them from now.
+ Mutations_set =Mutations_set[Mutations_set$WV!=0, ]
+ cat("\n ", nrow(Mutations_set)," Mutations left..")
+
+ cat("\n retrieve any potential homozygous mutations with zero Ref Allele count)")
+ cat("\n\t ", nrow(Mutations_set[Mutations_set$WR==0, ]), " Potential homozygous mutations ")
+ Mutations_set =Mutations_set[Mutations_set$WR!=0, ]
+
 
   #Matrix of Phasing_Code
 
@@ -1331,7 +1348,513 @@ if(progress){
 
 
 
+#' Compute the Phaisng Code
+#'
+#'This function computes the phasing codes of each mutations. Mutations with the same phasing code are considered as phased (e.g PH_101_0 and PH_101_0) . Mutations with the same phasing fragment code but different allele index are considered as not phased(e.g PH_101_1 and PH_101_0) .
+#'
+#' @export
+ComputePhasingCode_iterative<-function(LFR_withMutations_df,Mutations_set,RetrieveHomo=FALSE)
+{
 
+
+  if(RetrieveHomo){
+    cat("\n retrieve any potential homozygote mutations with zero Ref Allele count)")
+    cat("\n\t ", nrow(Mutations_set[Mutations_set$WR==0, ]), " Potential homozygous mutations ")
+    Mutations_set =Mutations_set[Mutations_set$WR!=0, ]
+
+  }
+  MutationsAlleleInfo_df=Mutations_set
+  FullLFR_df = LFR_withMutations_df
+
+
+  cat("\n\n Remove mutations with no wells count supporting the variant...")
+  #This is odd, there are some mutations with no well count supporting the variant? We remove them from now.
+  MutationsAlleleInfo_df =MutationsAlleleInfo_df[MutationsAlleleInfo_df$WV!=0, ]
+  cat("\n ", nrow(MutationsAlleleInfo_df)," Mutations left..")
+
+
+
+  cat("\n Select only Filter mutations ")
+
+ # if(Filter=="PASS"){
+    cat("\n\t  Select those with PASS filter ")
+    MutationsPhase_df=MutationsAlleleInfo_df
+    MutationsPhase_df =MutationsPhase_df[MutationsPhase_df$Filter=="PASS",]
+    cat("\n ", nrow(MutationsPhase_df)," Mutations to phase..")
+#   } else if(Filter=="NoBadreads"){
+#     cat("\n\n Generating Badreads flag")
+#     MutationsAlleleInfo_df$Badreads = unlist(lapply(as.character(MutationsAlleleInfo_df$Filter), function(x) as.numeric(grepl("badReads",x))))
+#
+#     cat("\n\t  Select those with No Bad reads  ")
+#     MutationsPhase_df=MutationsAlleleInfo_df
+#     MutationsPhase_df =MutationsPhase_df[MutationsPhase_df$Badreads==0,]
+#     cat("\n ", nrow(MutationsPhase_df)," Mutations to phase..")
+#   }else{
+#     stop("\n\n Filter should be either PASS either No Badreads")
+#   }
+
+
+
+
+  MutationsPhase_df["PhasingCode"] = rep("",nrow(MutationsPhase_df))
+  MutationsPhase_df["Homo"] = rep(0,nrow(MutationsPhase_df))
+
+  MutationsPhase_df["LongPhasingCode"] = rep("",nrow(MutationsPhase_df))
+  MutationsPhase_df["PhasingCodeTrace"] = rep("",nrow(MutationsPhase_df))
+  MutationsPhase_df["ambiguous"] = rep(0,nrow(MutationsPhase_df))
+
+
+
+  alternate_phasingcode<-function(phasingcode){
+    index=substr(phasingcode,nchar(phasingcode),nchar(phasingcode))
+    if(index=="1"){
+      altindex="0"
+    }else if (index=="0"){
+      altindex="1"
+    }else{
+      cat("\n Code : ", phasingcode)
+      stop("Error, last digit :  of the code should be 1 or 0")
+    }
+
+    altcode=paste(substr(phasingcode,1,nchar(phasingcode)-1),altindex,sep="")
+    altcode
+  }
+
+  for(imut in 1 :nrow(MutationsPhase_df))
+  {
+
+    #######  print(MutationsPhase_df[1:20, 16:20])
+
+
+
+    if(imut%%10==0) cat ("\n\n - ", imut)
+
+    code=paste("Phase_",imut,sep="")
+    code_same=paste(code,"_1",sep="")
+    code_other=paste(code,"_0",sep="")
+
+    mutation=rownames(MutationsPhase_df[imut,])
+
+    mutation_position = as.numeric(unlist(strsplit(mutation,"_"))[2])
+    if(MutationsPhase_df[imut,"Homo"]>0)
+      next
+
+
+
+    if(MutationsPhase_df[imut,"PhasingCode"]==""){
+      MutationsPhase_df[imut,"PhasingCode"] = code_same
+    }else
+      MutationsPhase_df[imut,"PhasingCode"] = paste(MutationsPhase_df[imut,"PhasingCode"] ,"-",code_same,"-",sep="")
+
+
+    if ( MutationsPhase_df[imut,"LongPhasingCode"] ==""){
+      MutationsPhase_df[imut,"LongPhasingCode"] = code_same
+    }else
+    {
+      MutationsPhase_df[mutation,"PhasingCodeTrace"]  =  MutationsPhase_df[mutation,"LongPhasingCode"]
+    }
+
+
+    #List of LFR with the mutation on SNP
+    LFR_withmutation_onSNP= FullLFR_df[grepl(mutation,FullLFR_df$MutationsOnSNP) , ]
+
+    #list of LFR with the mutation on REF
+    LFR_withmutation_onREF= FullLFR_df[ grepl(mutation,FullLFR_df$MutationsOnREF), ]
+
+
+    coLFR_mutations_sameAllele_onSNP=c()
+    coLFR_mutations_OtherAllele_onSNP = c()
+    coLFR_mutations_sameAllele_onREF = c()
+    coLFR_mutations_OtherAllele_onREF = c()
+
+
+
+
+    if(nrow(LFR_withmutation_onSNP)>0){
+      coLFR_mutations_sameAllele_onSNP= setdiff(intersect(unique(unlist(strsplit(paste(as.character(unlist( LFR_withmutation_onSNP$MutationsOnSNP)),collapse=":"),":"))), rownames(MutationsPhase_df)),mutation)
+      coLFR_mutations_OtherAllele_onSNP=intersect(unique(unlist(strsplit(paste(as.character(unlist( LFR_withmutation_onSNP$MutationsOnREF)),collapse=":"),":"))), rownames(MutationsPhase_df))
+    }
+
+    if(nrow(LFR_withmutation_onREF)>0){
+      coLFR_mutations_sameAllele_onREF= intersect(unique(unlist(strsplit(paste(as.character(unlist( LFR_withmutation_onREF$MutationsOnREF)),collapse=":"),":"))), rownames(MutationsPhase_df))
+      coLFR_mutations_OtherAllele_onREF= intersect(unique(unlist(strsplit(paste(as.character(unlist( LFR_withmutation_onREF$MutationsOnSNP)),collapse=":"),":"))), rownames(MutationsPhase_df))
+    }
+
+    coLFR_mutations_sameAllele = unique(c(coLFR_mutations_sameAllele_onSNP,coLFR_mutations_sameAllele_onREF))
+    coLFR_mutations_otherAllele = unique(c(coLFR_mutations_OtherAllele_onSNP,coLFR_mutations_OtherAllele_onREF ))
+
+    homo=intersect(coLFR_mutations_sameAllele,coLFR_mutations_otherAllele)
+    if(length(homo)>0){
+      warning("\n Exhibits homozygocity")
+      MutationsPhase_df[homo, "Homo"] =MutationsPhase_df[homo, "Homo"]  + 1
+
+      coLFR_mutations_sameAllele = setdiff(coLFR_mutations_sameAllele,homo)
+      coLFR_mutations_otherAllele=setdiff(coLFR_mutations_otherAllele, homo)
+    }
+
+
+
+    coLFR_mutations = c(coLFR_mutations_sameAllele ,  coLFR_mutations_otherAllele)
+
+    if(length(coLFR_mutations)==0)
+      next
+
+    coLFR_mutations_df = as.data.frame(matrix(nrow=length(coLFR_mutations), ncol=2))
+    colnames(coLFR_mutations_df) = c("Position","SameAllele")
+    rownames(coLFR_mutations_df) = coLFR_mutations
+    coLFR_mutations_df[coLFR_mutations_sameAllele,"SameAllele"] =  rep(1,length(coLFR_mutations_sameAllele))
+    coLFR_mutations_df[coLFR_mutations_otherAllele,"SameAllele"] =  rep(0,length(coLFR_mutations_otherAllele))
+    coLFR_mutations_df$Position = unlist(lapply(coLFR_mutations, function(x) as.numeric(unlist(strsplit(x,"_"))[2])))
+    coLFR_mutations_df = coLFR_mutations_df[order(coLFR_mutations_df$Position),]
+
+    #We keep only the mutations onward... coming after mutation_position
+
+
+
+    coLFR_mutations_df=coLFR_mutations_df[coLFR_mutations_df$Position > mutation_position, ]
+
+    if(nrow(coLFR_mutations_df)==0)
+      next
+
+    for (comut in 1:nrow(coLFR_mutations_df)){
+
+      coLFRmut = rownames(coLFR_mutations_df[comut,])
+
+      if(coLFR_mutations_df[comut,"SameAllele"]==1){
+        if( MutationsPhase_df[coLFRmut,"PhasingCode"]==""){
+          MutationsPhase_df[coLFRmut,"PhasingCode"] =code_same
+        }else{
+          MutationsPhase_df[coLFRmut,"PhasingCode"] = paste(MutationsPhase_df[coLFRmut,"PhasingCode"],code_same,sep=":" )
+        }
+        if(MutationsPhase_df[coLFRmut,"LongPhasingCode"] ==""){
+          MutationsPhase_df[coLFRmut,"LongPhasingCode"] = MutationsPhase_df[mutation,"LongPhasingCode"]
+        }else if(MutationsPhase_df[coLFRmut,"LongPhasingCode"] !=MutationsPhase_df[mutation,"LongPhasingCode"]){
+
+          if(MutationsPhase_df[mutation,"LongPhasingCode"]==code_same)
+            MutationsPhase_df[mutation,"LongPhasingCode"] =MutationsPhase_df[coLFRmut,"LongPhasingCode"]
+
+          MutationsPhase_df[mutation,"PhasingCodeTrace"] = paste(MutationsPhase_df[mutation,"PhasingCodeTrace"], MutationsPhase_df[mutation,"LongPhasingCode"] ,sep=":")
+          code_list= unlist(strsplit(MutationsPhase_df[mutation,"PhasingCodeTrace"],":"))
+          if(length(code_list)>1)
+            MutationsPhase_df[mutation,"ambiguous"] =1
+
+          TopCode=sort(table(code_list),decreasing = T)[1]
+          if(as.numeric(TopCode)>1)
+          {
+            MutationsPhase_df[mutation,"LongPhasingCode"] =names(TopCode)
+          }
+        }
+      }else  if(coLFR_mutations_df[comut,"SameAllele"]==0){
+        if( MutationsPhase_df[coLFRmut,"PhasingCode"]==""){
+          MutationsPhase_df[coLFRmut,"PhasingCode"] =code_other
+        }else{
+          MutationsPhase_df[coLFRmut,"PhasingCode"] = paste(MutationsPhase_df[coLFRmut,"PhasingCode"],code_other,sep=":" )
+        }
+        if(MutationsPhase_df[coLFRmut,"LongPhasingCode"] ==""){
+          MutationsPhase_df[coLFRmut,"LongPhasingCode"] = alternate_phasingcode(MutationsPhase_df[mutation,"LongPhasingCode"])
+        }else if(MutationsPhase_df[coLFRmut,"LongPhasingCode"] !=alternate_phasingcode(MutationsPhase_df[mutation,"LongPhasingCode"])){
+          if(MutationsPhase_df[mutation,"LongPhasingCode"]==code_same)
+            MutationsPhase_df[mutation,"LongPhasingCode"] =alternate_phasingcode(MutationsPhase_df[coLFRmut,"LongPhasingCode"])
+
+          MutationsPhase_df[mutation,"PhasingCodeTrace"] = paste(MutationsPhase_df[mutation,"PhasingCodeTrace"], alternate_phasingcode(MutationsPhase_df[mutation,"LongPhasingCode"]) ,sep=":")
+
+
+          code_list= unlist(strsplit(MutationsPhase_df[mutation,"PhasingCodeTrace"],":"))
+          if(length(code_list)>1)
+            MutationsPhase_df[mutation,"ambiguous"] =1
+
+          TopCode=sort(table(code_list),decreasing = T)[1]
+
+          if(length(TopCode)>1)
+            MutationsPhase_df[mutation,"ambiguous"] =1
+          if(as.numeric(TopCode)>1)
+          {
+            MutationsPhase_df[mutation,"LongPhasingCode"] =names(TopCode)
+          }
+
+        }
+
+
+
+      }else{
+        stop(" \n How come I found myself here????")
+      }
+
+
+    }
+
+  }
+
+
+
+
+
+
+  MutationsPhase_df
+
+
+
+
+}
+
+
+
+
+
+
+#' Compute the Phaisng Code
+#'
+#'This function computes the phasing codes of each mutations. Mutations with the same phasing code are considered as phased (e.g PH_101_0 and PH_101_0) . Mutations with the same phasing fragment code but different allele index are considered as not phased(e.g PH_101_1 and PH_101_0) .
+#'
+#' @export
+ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive")
+{
+
+
+
+  #select the level 1 mutations Germline mutations with Pass filer, shall with retrieve the homozygous?
+
+
+
+     if(mode=="iterative"){
+       cat("\n\n\t Computing the phasing using the iterative approach")
+       mutationphasing_df= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
+     }else if(mode=="recursive"){
+       cat("\n\n\t Computing the phasing using the reciursive approach")
+       mutationphasing_df= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
+     } else  if(mode=="both"){
+       cat("\n\n\t Computing the phasing using both methods")
+
+
+       cat("\n\n\t Computing the phasing using the iterative approach")
+       mutationphasing_df_iterative= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
+
+       cat("\n\n\t Computing the phasing using the reciursive approach")
+       mutationphasing_df_recursive= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
+
+     }
+
+
+
+
+
+  AllMutations_df=Mutations_set
+  #Level 1
+
+  #retrieve Germline Mutation
+  if ("IsGermline" %in% colnames(Mutations_set)){
+    Mutations_set=Mutations_set[Mutations_set$IsGermline==1,]
+  }else if ("Germline" %in% colnames(Mutations_set)){
+    Mutations_set=Mutations_set[Mutations_set$Germline==1,]
+  }else{
+    cat("\n\n No flag for the germline mutations in the data, all mutations will be considered as Germline")
+  }
+
+  #retrieve PASS Filter
+  if("Filter" %in% colnames(Mutations_set)){
+    Mutations_set =Mutations_set[Mutations_set$Filter=="PASS", ]
+  }else{
+    cat("\n No Filte rflag in the data, all the mutations will be considered as PASS mutations")
+  }
+
+
+
+  if(mode=="iterative"){
+    cat("\n\n\t Computing the phasing using the iterative approach")
+    mutationphasing_df= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
+  }  else  if(mode=="recursive"){
+    cat("\n\n\t Computing the phasing using the reciursive approach")
+    mutationphasing_df= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
+  } else  if(mode=="both"){
+    cat("\n\n\t Computing the phasing using both methods")
+
+
+    cat("\n\n\t Computing the phasing using the iterative approach")
+    mutationphasing_df_iterative= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
+
+    cat("\n\n\t Computing the phasing using the reciursive approach")
+    mutationphasing_df_recursive= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
+
+  }
+
+
+
+
+  if(mode=="recursive" || mode=="both"){
+    cat("\n\n\n\t Treating the recursive PhasingCode \n\t*********")
+
+    mutationphasing_df_recursive = mutationphasing_df_recursive[!is.na(mutationphasing_df_recursive$PhasingCode1) & mutationphasing_df_recursive$PhasingCode1!="", ]
+    AllMutations_df$PhasingCode1 = rep(NA,nrow(AllMutations_df))
+    AllMutations_df$PhasingCode1_Level = rep(NA,nrow(AllMutations_df))
+    AllMutations_df[rownames(mutationphasing_df_recursive),"PhasingCode1"] = mutationphasing_df_recursive$PhasingCode1
+    AllMutations_df[rownames(mutationphasing_df_recursive),"PhasingCode1_Level"] = rep(1,nrow(mutationphasing_df_recursive))
+
+
+    cat("\n\nRetrieve Phasing Code data ...")
+
+    PhasingCode1= unique(as.character(unlist(mutationphasing_df_recursive$PhasingCode1)))
+    PhasingCode1_wells <- vector("list", length(PhasingCode1))
+    names(PhasingCode1_wells) <- PhasingCode1
+    PhasingCode1_FirstPos=lapply(PhasingCode1_wells,function(x) Inf)
+    PhasingCode1_LastPos=lapply(PhasingCode1_wells,function(x) 0)
+
+    AllMutations_df$WV_IDs =  as.character(AllMutations_df$WV_IDs )
+    for (imut in 1:nrow(mutationphasing_df_recursive) ){
+      mut=rownames(mutationphasing_df_recursive)[imut]
+      pos= mutationphasing_df_recursive[mut,"Pos"]
+      phasecode= mutationphasing_df_recursive[mut,"PhasingCode1"]
+      wells_ids=unlist(strsplit(AllMutations_df[mut,"WV_IDs"],":"))
+      PhasingCode1_wells[phasecode] = list(unique(c(unlist(PhasingCode1_wells[phasecode]),wells_ids)))
+      if(pos < unlist(PhasingCode1_FirstPos[phasecode]))
+        PhasingCode1_FirstPos[phasecode] = pos
+      if(pos > unlist(PhasingCode1_LastPos[phasecode]))
+        PhasingCode1_LastPos[phasecode] = pos
+    }
+
+
+    ###Level 2
+
+    cat("\n\nCompute level 2 phasecode ...\n\n\t")
+
+    Level2_mutations=rownames(AllMutations_df[is.na(AllMutations_df$PhasingCode1),])
+    for(imut in 1:length(Level2_mutations)){
+      if(imut %%1000==0)
+        cat(" ", imut )
+      mut = Level2_mutations[imut]
+      pos=AllMutations_df[mut,"Pos"]
+      wells_ids=unlist(strsplit(AllMutations_df[mut,"WV_IDs"],":"))
+      PhaseCandidate = unique(c(names(PhasingCode1_LastPos[PhasingCode1_LastPos<pos+1000000 & PhasingCode1_LastPos>pos-1000000 ]),
+                                names(PhasingCode1_FirstPos[PhasingCode1_FirstPos<pos+1000000 & PhasingCode1_FirstPos>pos-1000000 ])))
+      if(length(PhaseCandidate)>10){
+        PhaseCandidate = unique(c(names(PhasingCode1_LastPos[PhasingCode1_LastPos<pos+500000 & PhasingCode1_LastPos>pos-500000 ]),
+                                  names(PhasingCode1_FirstPos[PhasingCode1_FirstPos<pos+500000 & PhasingCode1_FirstPos>pos-500000 ])))
+      }
+      if(length(PhaseCandidate)>10){
+        PhaseCandidate = unique(c(names(PhasingCode1_LastPos[PhasingCode1_LastPos<pos+100000 & PhasingCode1_LastPos>pos-100000 ]),
+                                  names(PhasingCode1_FirstPos[PhasingCode1_FirstPos<pos+100000 & PhasingCode1_FirstPos>pos-100000 ])))
+      }
+      if(length(PhaseCandidate)>10){
+        PhaseCandidate = unique(c(names(PhasingCode1_LastPos[PhasingCode1_LastPos<pos+50000 & PhasingCode1_LastPos>pos-50000 ]),
+                                  names(PhasingCode1_FirstPos[PhasingCode1_FirstPos<pos+50000 & PhasingCode1_FirstPos>pos-50000 ])))
+      }
+
+      if(length(PhaseCandidate)==0)
+        next
+
+      number_intersecting_wells= unlist(lapply(PhaseCandidate, function(x) length(intersect(PhasingCode1_wells[x],wells_ids)) ))
+      names(number_intersecting_wells) = PhaseCandidate
+      number_intersecting_wells=sort(number_intersecting_wells,decreasing = TRUE)
+
+      if(number_intersecting_wells[1] > 0){
+        AllMutations_df[mut,"PhasingCode1"] = names(number_intersecting_wells[1])
+        AllMutations_df[mut,"PhasingCode1_Level"] = 2
+
+      }
+
+
+
+
+    }
+
+  }
+
+
+
+
+
+  if(mode=="iterative" || mode=="both"){
+
+    cat("\n\n\n\t the Treating the iterative PhasingCode \n\t*********")
+    mutationphasing_df_iterative = mutationphasing_df_iterative[!is.na(mutationphasing_df_iterative$LongPhasingCode) & mutationphasing_df_iterative$LongPhasingCode!="" & mutationphasing_df_iterative$Homo==0, ]
+    AllMutations_df$PhasingCode2 = rep(NA,nrow(AllMutations_df))
+    AllMutations_df$PhasingCode2_Level = rep(NA,nrow(AllMutations_df))
+    AllMutations_df[rownames(mutationphasing_df_iterative),"PhasingCode2"] = mutationphasing_df_iterative$LongPhasingCode
+    AllMutations_df[rownames(mutationphasing_df_iterative),"PhasingCode2_Level"] = rep(1,nrow(mutationphasing_df_iterative))
+
+
+
+
+    cat("\n\nRetrieve Phasing Code data ...")
+
+    PhasingCode2= unique(as.character(unlist(mutationphasing_df_iterative$LongPhasingCode)))
+    PhasingCode2_wells <- vector("list", length(PhasingCode2))
+    names(PhasingCode2_wells) <- PhasingCode2
+    PhasingCode2_FirstPos=lapply(PhasingCode2_wells,function(x) Inf)
+    PhasingCode2_LastPos=lapply(PhasingCode2_wells,function(x) 0)
+
+    AllMutations_df$WV_IDs =  as.character(AllMutations_df$WV_IDs )
+    for (imut in 1:nrow(mutationphasing_df_iterative) ){
+      mut=rownames(mutationphasing_df_iterative)[imut]
+      pos= mutationphasing_df_iterative[mut,"Pos"]
+      phasecode= mutationphasing_df_iterative[mut,"LongPhasingCode"]
+      wells_ids=unlist(strsplit(AllMutations_df[mut,"WV_IDs"],":"))
+      PhasingCode2_wells[phasecode] = list(unique(c(unlist(PhasingCode2_wells[phasecode]),wells_ids)))
+      if(pos < unlist(PhasingCode2_FirstPos[phasecode]))
+        PhasingCode2_FirstPos[phasecode] = pos
+      if(pos > unlist(PhasingCode2_LastPos[phasecode]))
+        PhasingCode2_LastPos[phasecode] = pos
+    }
+
+
+    ###Level 2
+
+    cat("\n\nCompute level 2 phasecode ...\n\n\t")
+
+    Level2_mutations=rownames(AllMutations_df[is.na(AllMutations_df$PhasingCode2),])
+    for(imut in 1:length(Level2_mutations)){
+      if(imut %%1000==0)
+        cat(" ", imut )
+      mut = Level2_mutations[imut]
+      pos=AllMutations_df[mut,"Pos"]
+      wells_ids=unlist(strsplit(AllMutations_df[mut,"WV_IDs"],":"))
+      PhaseCandidate = unique(c(names(PhasingCode2_LastPos[PhasingCode2_LastPos<pos+1000000 & PhasingCode2_LastPos>pos-1000000 ]),
+                                names(PhasingCode2_FirstPos[PhasingCode2_FirstPos<pos+1000000 & PhasingCode2_FirstPos>pos-1000000 ])))
+      if(length(PhaseCandidate)>10){
+        PhaseCandidate = unique(c(names(PhasingCode2_LastPos[PhasingCode2_LastPos<pos+500000 & PhasingCode2_LastPos>pos-500000 ]),
+                                  names(PhasingCode2_FirstPos[PhasingCode2_FirstPos<pos+500000 & PhasingCode2_FirstPos>pos-500000 ])))
+      }
+      if(length(PhaseCandidate)>10){
+        PhaseCandidate = unique(c(names(PhasingCode2_LastPos[PhasingCode2_LastPos<pos+100000 & PhasingCode2_LastPos>pos-100000 ]),
+                                  names(PhasingCode2_FirstPos[PhasingCode2_FirstPos<pos+100000 & PhasingCode2_FirstPos>pos-100000 ])))
+      }
+      if(length(PhaseCandidate)>10){
+        PhaseCandidate = unique(c(names(PhasingCode2_LastPos[PhasingCode2_LastPos<pos+50000 & PhasingCode2_LastPos>pos-50000 ]),
+                                  names(PhasingCode2_FirstPos[PhasingCode2_FirstPos<pos+50000 & PhasingCode2_FirstPos>pos-50000 ])))
+      }
+
+      if(length(PhaseCandidate)==0)
+        next
+
+      number_intersecting_wells= unlist(lapply(PhaseCandidate, function(x) length(intersect(PhasingCode2_wells[x],wells_ids)) ))
+      names(number_intersecting_wells) = PhaseCandidate
+      number_intersecting_wells=sort(number_intersecting_wells,decreasing = TRUE)
+
+      if(number_intersecting_wells[1] > 0){
+        AllMutations_df[mut,"PhasingCode2"] = names(number_intersecting_wells[1])
+        AllMutations_df[mut,"PhasingCode2_Level"] = 2
+
+      }
+
+
+
+
+    }
+
+  }
+
+
+
+
+
+
+
+
+
+  AllMutations_df
+
+
+
+}
 
 
 
