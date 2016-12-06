@@ -1646,10 +1646,10 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
   #retrieve Germline Mutation
   if ("IsGermline" %in% colnames(Mutations_set)){
     Mutations_set=Mutations_set[Mutations_set$IsGermline==1,]
-    cat("\n \n Germline mutations : ", nrow(mutation_set)," mutations\n")
+    cat("\n \n Germline mutations : ", nrow(Mutations_set)," mutations\n")
   }else if ("Germline" %in% colnames(Mutations_set)){
     Mutations_set=Mutations_set[Mutations_set$Germline==1,]
-    cat("\n \n Germline mutations : ", nrow(mutation_set)," mutations \n")
+    cat("\n \n Germline mutations : ", nrow(Mutations_set)," mutations \n")
   }else{
     cat("\n\n No flag for the germline mutations in the data, all mutations will be considered as Germline")
   }
@@ -1657,7 +1657,7 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
   #retrieve PASS Filter
   if("Filter" %in% colnames(Mutations_set)){
     Mutations_set =Mutations_set[Mutations_set$Filter=="PASS", ]
-    cat("\n \n PASS mutations : ", nrow(mutation_set)," mutations \n")
+    cat("\n \n PASS mutations : ", nrow(Mutations_set)," mutations \n")
   }else{
     cat("\n No Filte rflag in the data, all the mutations will be considered as PASS mutations")
   }
