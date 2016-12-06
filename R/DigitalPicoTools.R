@@ -932,8 +932,8 @@ getVariantCoverageTable <- function(VCFFilePath, wells_id = NULL, region = NULL,
 
 #' Computing Long fragment Reads from the wells
 #'
-#'This function takes as input a list of wells and compute the list of Long Fragments Reads sequenced in each well. Each LFR is represented by its name, its chromosome, its start and end position, its length, its average coverage, the number of reads making up the fragment and the well ID it is originating from. The function return an objoct of class \code{\link{LFRSet}}
-#' @note  ''.
+#'This function takes as input a list of wells and compute the list of Long Fragments Reads sequenced in each well. Each LFR is represented by its name, its chromosome, its start and end position, its length, its average coverage, the number of reads making up the fragment and the well ID it is originating from. The function return an objoct of class \code{\link{LFRSet}}.
+#' @note  'The function creates temproary index of the bam files. So you need to have writing accesss to the location of the Bam files'.
 #' @param well_list A list of objects of class \code{\link{WellSample}} representing the wells to compute the fragments from. well_list can also be a vector of character string representing the file names to each well BAM file.
 #' @param mindistance The minimum distance separating two consecutive LFR. Two paired reads located within that distance are considered to be originating from the same fragments of DNA.
 #' @param unexists.action Define the action to perform when a well bam file do not exists. Can be one of the following:
@@ -1427,7 +1427,7 @@ ComputePhasingCode_iterative<-function(LFR_withMutations_df,Mutations_set,Retrie
 
 
 
-    if(imut%%10==0) cat ("\n\n - ", imut)
+    if(imut%%1000==0) cat ("\n\n - ", imut)
 
     code=paste("Phase_",imut,sep="")
     code_same=paste(code,"_1",sep="")
@@ -1640,6 +1640,8 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
 
   AllMutations_df=Mutations_set
   #Level 1
+
+  cat("\n\n\n Compute level 1 phasecode ...\n\n\t")
 
   #retrieve Germline Mutation
   if ("IsGermline" %in% colnames(Mutations_set)){
