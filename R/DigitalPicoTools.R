@@ -1613,26 +1613,26 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
 
 
   #select the level 1 mutations Germline mutations with Pass filer, shall with retrieve the homozygous?
-
-
-
-     if(mode=="iterative"){
-       cat("\n\n\t Computing the phasing using the iterative approach")
-       mutationphasing_df= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
-     }else if(mode=="recursive"){
-       cat("\n\n\t Computing the phasing using the reciursive approach")
-       mutationphasing_df= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
-     } else  if(mode=="both"){
-       cat("\n\n\t Computing the phasing using both methods")
-
-
-       cat("\n\n\t Computing the phasing using the iterative approach")
-       mutationphasing_df_iterative= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
-
-       cat("\n\n\t Computing the phasing using the reciursive approach")
-       mutationphasing_df_recursive= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
-
-     }
+#
+#
+#
+#      if(mode=="iterative"){
+#        cat("\n\n\t Computing the phasing using the iterative approach")
+#        mutationphasing_df= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
+#      }else if(mode=="recursive"){
+#        cat("\n\n\t Computing the phasing using the reciursive approach")
+#        mutationphasing_df= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
+#      } else  if(mode=="both"){
+#        cat("\n\n\t Computing the phasing using both methods")
+#
+#
+#        cat("\n\n\t Computing the phasing using the iterative approach")
+#        mutationphasing_df_iterative= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
+#
+#        cat("\n\n\t Computing the phasing using the reciursive approach")
+#        mutationphasing_df_recursive= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
+#
+#      }
 
 
 
@@ -1646,8 +1646,10 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
   #retrieve Germline Mutation
   if ("IsGermline" %in% colnames(Mutations_set)){
     Mutations_set=Mutations_set[Mutations_set$IsGermline==1,]
+    cat("\n \n Germline mutations : ", nrow(mutation_set)," mutations\n")
   }else if ("Germline" %in% colnames(Mutations_set)){
     Mutations_set=Mutations_set[Mutations_set$Germline==1,]
+    cat("\n \n Germline mutations : ", nrow(mutation_set)," mutations \n")
   }else{
     cat("\n\n No flag for the germline mutations in the data, all mutations will be considered as Germline")
   }
@@ -1655,6 +1657,7 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
   #retrieve PASS Filter
   if("Filter" %in% colnames(Mutations_set)){
     Mutations_set =Mutations_set[Mutations_set$Filter=="PASS", ]
+    cat("\n \n PASS mutations : ", nrow(mutation_set)," mutations \n")
   }else{
     cat("\n No Filte rflag in the data, all the mutations will be considered as PASS mutations")
   }
