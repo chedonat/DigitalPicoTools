@@ -1436,7 +1436,7 @@ ComputePhasingCode_iterative<-function(LFR_withMutations_df,Mutations_set,Retrie
     mutation=rownames(MutationsPhase_df[imut,])
 
     mutation_position = as.numeric(unlist(strsplit(mutation,"_"))[2])
-    if(MutationsPhase_df[imut,"Homo"]>0)
+    if(!is.na(MutationsPhase_df[imut,"Homo"]) && MutationsPhase_df[imut,"Homo"]>0)
       next
 
 
@@ -1666,10 +1666,10 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
 
   if(mode=="iterative"){
     cat("\n\n\t Computing the phasing using the iterative approach")
-    mutationphasing_df= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
+    mutationphasing_df_iterative= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
   }  else  if(mode=="recursive"){
     cat("\n\n\t Computing the phasing using the reciursive approach")
-    mutationphasing_df= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
+    mutationphasing_df_recursive= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
   } else  if(mode=="both"){
     cat("\n\n\t Computing the phasing using both methods")
 
