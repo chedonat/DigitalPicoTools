@@ -2173,8 +2173,8 @@ GetPhasingAssociation<-function(phasedmatrix, FromType, ToType, maxdistance, num
     mut_pos=as.numeric(fromtypephased_chr[imut,"Pos"])
 
 
-    output=(((imutation-1) %%1)==0)
-    if(output)
+    output=F
+    if(imutation %/% 100 == 0 )
       cat (" \n mut ",imutation,"/ ",endmut-startmut," (", mut,") :  ",imut,"/",endmut,"/",nrow(fromtypephased_chr) )
     #cat("\n retrieval of ", ToType," mutations")
 
