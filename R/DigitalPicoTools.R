@@ -2210,7 +2210,7 @@ GetPhasingAssociation<-function(phasedmatrix, FromType, ToType, maxdistance, num
 
 
 
-    cat("\n level 1")
+  #  cat("\n level 1")
 
     # submatrix_phasing = rbind(phasedmatrix[mut,cifsm:cilsm], subToType_phasing)
     submatrix_phasing = rbind(masterfromtypephased_chr[mut,cifsm:cilsm], subToType_phasing)
@@ -2244,7 +2244,7 @@ GetPhasingAssociation<-function(phasedmatrix, FromType, ToType, maxdistance, num
     if (length(unlist(phasing_info$phased_list))==0)
       next
 
-    cat("\n level 2")
+    #cat("\n level 2")
 
     phased_list<-unlist(phasing_info$phased_list);  notphased_list<-unlist(phasing_info$notphased_list)
     phased_list = setdiff(phased_list,notphased_list); notphased_list=setdiff(notphased_list,phased_list)
