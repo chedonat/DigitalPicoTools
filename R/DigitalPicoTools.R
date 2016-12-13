@@ -1919,6 +1919,358 @@ getCopyNumber<-function(OncoSNP_copynumber,mutations_table){
 
 
 
+#' @export
+get_allbutlast<-function(x)
+{
+  x = as.character(unlist(x))
+  substr(x, 1, nchar(x)-1)
+}
+
+#' @export
+is_phased<-function(mutation1, mutation2, phased_submatrix,minsample)
+{
+  phased_str=""
+  phased_1=0
+  phased_0=0
+  phased_NA=0
+
+
+  for (isample in 1: length(colnames(phased_submatrix)))
+  {
+    sample=colnames(phased_submatrix)[isample]
+    name_sample=sample
+
+    if(is.na(phased_submatrix[mutation1,sample])) next
+    if(is.na(phased_submatrix[mutation2,sample])) next
+
+    if (phased_submatrix[mutation1,sample]==phased_submatrix[mutation2,sample])
+    {
+      phased_1=phased_1+1
+      phased_str=paste(phased_str,paste(1,name_sample,sep=":"),sep="|")
+
+      #  cat(" ",phased_submatrix[mutation1,sample])
+    }else if((substr(phased_submatrix[mutation1,sample],1,6)=="Phased") && (substr(phased_submatrix[mutation2,sample],1,6)=="Phased"))
+    {
+      if (get_allbutlast(phased_submatrix[mutation1,sample])==get_allbutlast(phased_submatrix[mutation2,sample]))
+      {
+        phased_0=phased_0+1
+        phased_str=paste(phased_str,paste(0,name_sample,sep=":"),sep="|")
+      }
+    }
+
+
+  }
+
+  is_phased=NA
+
+  phased_occurence = paste(" 1:", phased_1, " 0:", phased_0,sep="")
+
+  if( phased_1<minsample && phased_0<minsample)
+  {
+    is_phased=NA
+  }else{
+    if(phased_1>phased_0)
+      is_phased=1
+    else if(phased_0>phased_1)
+      is_phased=0
+
+    #more than 3 sample support every alternative, then there is an ambiguity.  report NA
+    if((phased_1>3) && (phased_0>3))
+      is_phased=NA
+  }
+
+
+
+  list(phased=is_phased, occurence= phased_occurence, str=phased_str)
+
+}
+
+
+
+
+
+
+
+#Similar like Is phased but in a more strictly manner, phased if there is absolutely no evidence supporting the not phased alternative
+#' @export
+is_strictlyphased<-function(mutation1, mutation2, phased_submatrix,minsample)
+{
+  phased_str=""
+  phased_1=0
+  phased_0=0
+  phased_NA=0
+
+
+  for (isample in 1: length(colnames(phased_submatrix)))
+  {
+    sample=colnames(phased_submatrix)[isample]
+    name_sample=sample
+
+    if(is.na(phased_submatrix[mutation1,sample])) next
+    if(is.na(phased_submatrix[mutation2,sample])) next
+
+    if (phased_submatrix[mutation1,sample]==phased_submatrix[mutation2,sample])
+    {
+      phased_1=phased_1+1
+      phased_str=paste(phased_str,paste(1,name_sample,sep=":"),sep="|")
+
+      #  cat(" ",phased_submatrix[mutation1,sample])
+    }else if((substr(phased_submatrix[mutation1,sample],1,6)=="Phased") && (substr(phased_submatrix[mutation2,sample],1,6)=="Phased"))
+    {
+      if (get_allbutlast(phased_submatrix[mutation1,sample])==get_allbutlast(phased_submatrix[mutation2,sample]))
+      {
+        phased_0=phased_0+1
+        phased_str=paste(phased_str,paste(0,name_sample,sep=":"),sep="|")
+      }
+    }
+
+
+  }
+
+  is_phased=NA
+
+  phased_occurence = paste(" 1:", phased_1, " 0:", phased_0,sep="")
+
+  if( phased_1<minsample && phased_0<minsample)
+  {
+    is_phased=NA
+  }else if ( phased_1>0 && phased_0>0){
+    is_phased=NA
+  }else if(phased_1>0)
+    is_phased=1
+  else if(phased_0>0)
+    is_phased=0
+
+  #more than 3 sample support every alternative, then there is an ambiguity.  report NA
+  #if((phased_1>3) && (phased_0>3))
+  #  is_phased=NA
+  #}
+
+
+
+  list(phased=is_phased, occurence= phased_occurence, str=phased_str)
+
+}
+
+#' @export
+list_phasing<-function(mutation, phased_submatrix,minsample,mode="strict")
+{
+
+  phased=vector()
+  not_phased=vector()
+  phasing_stroccurence=""
+  phasing_strstr=""
+  for (jmut in 1: nrow(phased_submatrix))
+  {
+    #  mutationj=  rownames(phased_submatrix[jmut,])
+    mutationj=  rownames(phased_submatrix[jmut,colnames(phased_submatrix),drop=FALSE])
+
+    if(mutationj==mutation) next
+    # cat("\n mutationj is ",mutationj)
+    if(!is.null(mode) && (mode=="strict")){
+      phasing_result= is_strictlyphased(mutation,mutationj, phased_submatrix,minsample)
+    }else{
+      phasing_result= is_phased(mutation,mutationj, phased_submatrix,minsample)
+    }
+
+    # cat (" here it is ", phasing_result$phased)
+
+    if (!is.na(phasing_result$phased))
+    {
+
+      #  cat (" here it is "); print(phasing_result)
+
+      phasing_stroccurence=paste(phasing_stroccurence,phasing_result$occurence,sep="/")
+      phasing_strstr=paste(phasing_strstr,phasing_result$str,sep="/")
+      if (phasing_result$phased==1)
+        phased<-c(phased,mutationj)
+      else if (phasing_result$phased==0)
+        not_phased<-c(not_phased,mutationj)
+
+    }
+
+  }
+
+  list(phased_list=phased,notphased_list=not_phased, phased_occurence= phasing_stroccurence,phased_str=phasing_strstr)
+
+}
+
+
+
+
+#' Extraction phasing association
+#'
+#'This function take a matrix or submatrix and compute the phasing association between the somatic mutations and the germline mutations, for each somatic mutations present in the matrix its compute its list of phased germline mutations
+#'
+#' @export
+GetPhasingAssociation<-function(phasedmatrix, FromType, ToType, maxdistance, number_node,totalparts_node,minsample, cifsm,mode="strict")
+{
+
+
+
+  #For each mutations of type "FromType" we compute the list of mutation of type "ToType" phased to it. Type cand be any of the following three : "somatic", "germline", 'any"
+
+  cilsm=ncol(phasedmatrix)
+
+
+  if (!(FromType %in% c("somatic","germline","any") && ToType %in%  c("somatic","germline","any") ))
+    stop(" FromType and ToType must be one  of the following : 'somatic', 'germline' or  'any' ")
+
+  if(FromType=="somatic") from_germline_status=0
+  if(FromType=="germline") from_germline_status=1
+
+  if(ToType=="somatic") to_germline_status=0
+  if(ToType=="germline") to_germline_status=1
+
+  #We restrict the rows
+  cat("\n\n restrict the matrix and prepare the list of ")
+  phasedmatrix =phasedmatrix[rowSums(!is.na(phasedmatrix[cifsm:cilsm]))>0,]
+  fromtypephased_chr=phasedmatrix[1:(cifsm-1)]
+  masterfromtypephased_chr=phasedmatrix
+  #Important, we extract the submatrix only for the From Type mutations
+  if(FromType!="any")
+  {
+    fromtypephased_chr  = fromtypephased_chr[fromtypephased_chr$IsGermline==from_germline_status, ]
+    masterfromtypephased_chr=masterfromtypephased_chr[masterfromtypephased_chr$IsGermline==from_germline_status, ]
+  }
+  if(ToType!="any")
+    phasedmatrix= phasedmatrix[phasedmatrix$IsGermline==to_germline_status ,]
+
+  fromtypephased_chr["Phased_List"] = rep("", nrow(fromtypephased_chr))
+  fromtypephased_chr["NotPhased_List"] = rep("", nrow(fromtypephased_chr))
+
+
+
+
+  cat("\n\t*******************\n Extract position to run \n\t *********************")
+  start_position_node=1
+  end_position_node = nrow(fromtypephased_chr)
+  if (number_node !=0)
+  {
+    cat("\n\n\t We extract the ", number_node,"th part out of ",totalparts_node,"  parts")
+    full_length=nrow(fromtypephased_chr)
+    part_length=ceiling(full_length/totalparts_node)
+    start_position_node= (number_node-1) * part_length + 1
+    end_position_node = start_position_node + part_length -1
+    if (end_position_node >nrow(fromtypephased_chr) )
+      end_position_node = nrow(fromtypephased_chr)
+
+    cat("\n\n\t The run will go from mutation  ",start_position_node," to mutation ", end_position_node)
+  }else
+  {
+    cat("\n\t No subpart extracted for this node, the whole chromosome considered...")
+  }
+
+  startmut=start_position_node
+  endmut = end_position_node
+  #fromtypephased_chr=fromtypephased_chr[startmut:endmut, ]
+  #startmut=start_position_node + 600
+  imutation=0
+  for (imut in startmut:endmut)
+  {
+    imutation =imutation+1;
+    mut <- rownames(fromtypephased_chr[imut,])
+    mut_pos=as.numeric(fromtypephased_chr[imut,"Pos"])
+
+
+    output=(((imutation-1) %%1)==0)
+    if(output)
+      cat (" \n mut ",imutation,"/ ",endmut-startmut," (", mut,") :  ",imut,"/",endmut,"/",nrow(fromtypephased_chr) )
+    #cat("\n retrieval of ", ToType," mutations")
+
+    minpos <- mut_pos -maxdistance;  maxpos<-  mut_pos +maxdistance
+    subToType_phasing=phasedmatrix[as.numeric(phasedmatrix$Pos)>minpos & as.numeric(phasedmatrix$Pos)<maxpos & !is.na(phasedmatrix$Pos) ,cifsm:cilsm]
+    nb_ToTypes = nrow(subToType_phasing)
+    if(output)   cat ("  ", nb_ToTypes, " ", ToType, " mutations located within ", maxdistance, " bp  "  )
+
+    # submatrix_phasing = rbind(phasedmatrix[mut,cifsm:cilsm], subToType_phasing)
+
+
+
+    #If the number of found mutations is to high, then  we consider mutations located within half the previous distance
+    #If a still  really high number of mutations around (>1000), then we choose only the mutations not close by less than 50 bp form each other.
+
+    Reduce=T
+    if(Reduce){
+      #if (length(unlist(phasing_info$phased_list))>100)
+      maxdistance_reduce = maxdistance
+      while (nb_ToTypes>2000){
+        maxdistance_reduce =  maxdistance_reduce/2
+        minpos <- mut_pos -maxdistance_reduce;  maxpos<-  mut_pos +maxdistance_reduce
+        subToType_phasing=phasedmatrix[as.numeric(phasedmatrix$Pos)>minpos & as.numeric(phasedmatrix$Pos)<maxpos & !is.na(phasedmatrix$Pos)  ,cifsm:cilsm]
+        nb_ToTypes = nrow(subToType_phasing)
+
+        if(output)   cat ("\n\t Too high we go with   ", nb_ToTypes, " ", ToType, "  located within ", maxdistance_reduce, " bp" )
+
+      }
+
+
+
+    }
+
+
+
+    cat("\n level 1")
+
+    # submatrix_phasing = rbind(phasedmatrix[mut,cifsm:cilsm], subToType_phasing)
+    submatrix_phasing = rbind(masterfromtypephased_chr[mut,cifsm:cilsm], subToType_phasing)
+
+    #Only sample where the somatic has a phasing information
+    somatic_phasing=submatrix_phasing[mut,]
+    samples_toconsider=names( somatic_phasing[,!is.na( somatic_phasing),drop=F])
+    submatrix_phasing=submatrix_phasing[samples_toconsider]
+
+    #Only germline  with phasing information
+    not_naphasing=rowSums(!is.na(submatrix_phasing))
+    germline_withphase=names(not_naphasing[not_naphasing>0])
+    submatrix_phasing= submatrix_phasing[germline_withphase,samples_toconsider, drop=F]
+    # cat("\n")
+    # print(head(submatrix_phasing))
+
+
+    if(output)   cat ("\n\t   ", nrow(submatrix_phasing), " germline mutations "  )
+
+
+
+    if (nb_ToTypes>0)
+      phasing_info = list_phasing(mut,submatrix_phasing, minsample,mode=mode )
+    else
+      next
+
+
+
+    if(output)  cat ("\n",length(unlist(phasing_info$phased_list)), "Phased, ", length(unlist(phasing_info$notphased_list)), " Not phased \n Phasing string : ",phasing_info$phased_str )
+
+    if (length(unlist(phasing_info$phased_list))==0)
+      next
+
+    cat("\n level 2")
+
+    phased_list<-unlist(phasing_info$phased_list);  notphased_list<-unlist(phasing_info$notphased_list)
+    phased_list = setdiff(phased_list,notphased_list); notphased_list=setdiff(notphased_list,phased_list)
+
+    if(output)  cat (length( phased_list), " non conflicting Phased, ", length(notphased_list), "non conflicting  Not phased")
+
+    fromtypephased_chr[mut , "Phased_List"] = paste( phased_list, collapse=":")
+    fromtypephased_chr[mut, "NotPhased_List"] = paste(notphased_list, collapse=":")
+  }
+
+  if (totalparts_node==1)
+    write.csv(fromtypephased_chr_nothead, file =paste(Patient_Folder,"Phasing/Chromosomes/phasingassociation_",FromType,"_",ToType,"_",Patient_Name,"_",chrom, ".csv",sep=""),quote=F)
+
+  fromtypephased_chr[startmut:endmut,]
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
