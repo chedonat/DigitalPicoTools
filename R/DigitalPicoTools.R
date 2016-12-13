@@ -1863,6 +1863,61 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
 
 
 
+#' Extraction the copy number information
+#'
+#'This function extract at each mutation locus from the Copy Number table outputed by the software OncoSNP
+#'
+#' @export
+getCopyNumber<-function(OncoSNP_copynumber,mutations_table){
+  cat("\n\t \t Creating empty matrices\n\n")
+  CopyNumber_df<-matrix(nrow=nrow(mutations_table), ncol=ncol(OncoSNP_copynumber) )
+  CopyNumber_df<-as.data.frame(CopyNumber_df)
+  colnames(CopyNumber_df) <-c("Chromosome","EndPosition","CopyNumber","LOH","Rank","Loglik","nProbes","NormalFraction","TumourState","PloidyNo","MajorCopyNumber","MinorCopyNumber","LowCopyNumber")
+  rownames(CopyNumber_df) = rownames(mutations_table)
+
+  list_column<-c("Chromosome","EndPosition","CopyNumber","LOH","Rank","Loglik","nProbes","NormalFraction","TumourState","PloidyNo","MajorCopyNumber","MinorCopyNumber")
+
+  CopyNumber_df[c("Chromosome","EndPosition")]<-mutations_table[c(1,3)] # Chromosome and end position
+
+  imutation=0
+
+
+  for (imut in 1:nrow(mutations_table))
+  {
+    imutation=imutation+1
+    mut <- rownames(mutations_table[imut ,])
+
+    step<-(endmut-startmut)%/%100
+    if(step==0) step=1
+    if (imutation%%step==0) cat("step :  ", floor(imutation/step), " ")
+
+    mutcn_df<-OncoSNP_copynumber[ OncoSNP_copynumber$StartPosition<as.numeric(mutations_table[mut,"Pos"]) & OncoSNP_copynumber$EndPosition>as.numeric(mutations_table[mut ,"Pos"]) , ]
+
+
+    if(nrow(mutcn_df)==0)
+      next
+
+    mutcn <- mutcn_df[which.max(as.vector(unlist(mutcn_df["Rank"]))),list_column]
+    mut_cn_df_plot<-mutcn_df[mutcn_df$Rank<3,]
+    mutcn_plot <- mut_cn_df_plot[which.max(as.vector(unlist(mut_cn_df_plot["Rank"]))),"CopyNumber"]
+
+    CopyNumber_df[mut,3:13]= c(mutcn[3:12],  mutcn_plot )
+
+
+  }
+
+  CopyNumber_df
+
+
+
+}
+
+
+
+
+
+
+
 
 
 

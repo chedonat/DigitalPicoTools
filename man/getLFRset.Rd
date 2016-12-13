@@ -30,10 +30,10 @@ getLFRset(wells_list, mindistance, unexists.action = "unexists.fail",
 An object of class  \code{\link{LFRset}}.
 }
 \description{
-This function takes as input a list of wells and compute the list of Long Fragments Reads sequenced in each well. Each LFR is represented by its name, its chromosome, its start and end position, its length, its average coverage, the number of reads making up the fragment and the well ID it is originating from. The function return an objoct of class \code{\link{LFRSet}}
+This function takes as input a list of wells and compute the list of Long Fragments Reads sequenced in each well. Each LFR is represented by its name, its chromosome, its start and end position, its length, its average coverage, the number of reads making up the fragment and the well ID it is originating from. The function return an objoct of class \code{\link{LFRSet}}.
 }
 \note{
-''.
+'The function creates temproary index of the bam files. So you need to have writing accesss to the location of the Bam files'.
 }
 \examples{
   wellsID_file=system.file('extdata','wells_id_tissue.txt',package='DigitalPicoTools')
