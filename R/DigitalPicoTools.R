@@ -1869,15 +1869,17 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
 #'
 #' @export
 getCopyNumber<-function(OncoSNP_copynumber,mutations_table){
+
+
   cat("\n\t \t Creating empty matrices\n\n")
-  CopyNumber_df<-matrix(nrow=nrow(mutations_table), ncol=ncol(OncoSNP_copynumber) )
+  CopyNumber_df<-matrix(nrow=nrow(mutations_table), ncol=ncol(OncoSNP_copynumber)-1 )
   CopyNumber_df<-as.data.frame(CopyNumber_df)
-  colnames(CopyNumber_df) <-c("Chromosome","EndPosition","CopyNumber","LOH","Rank","Loglik","nProbes","NormalFraction","TumourState","PloidyNo","MajorCopyNumber","MinorCopyNumber","LowCopyNumber")
+  colnames(CopyNumber_df) <-c("Chromosome","EndPosition","CopyNumber","LOH","Rank","Loglik","nProbes","NormalFraction","TumourState","PloidyNo","MajorCopyNumber","MinorCopyNumber")
   rownames(CopyNumber_df) = rownames(mutations_table)
 
   list_column<-c("Chromosome","EndPosition","CopyNumber","LOH","Rank","Loglik","nProbes","NormalFraction","TumourState","PloidyNo","MajorCopyNumber","MinorCopyNumber")
 
-  CopyNumber_df[c("Chromosome","EndPosition")]<-mutations_table[c(1,3)] # Chromosome and end position
+  CopyNumber_df[c("Chromosome","EndPosition")]<-mutations_table[c("Chrom","Pos")] # Chromosome and end position
 
   imutation=0
 
@@ -1891,7 +1893,8 @@ getCopyNumber<-function(OncoSNP_copynumber,mutations_table){
     if(step==0) step=1
     if (imutation%%step==0) cat("step :  ", floor(imutation/step), " ")
 
-    mutcn_df<-OncoSNP_copynumber[ OncoSNP_copynumber$StartPosition<as.numeric(mutations_table[mut,"Pos"]) & OncoSNP_copynumber$EndPosition>as.numeric(mutations_table[mut ,"Pos"]) , ]
+    mutcn_df<-OncoSNP_copynumber[ OncoSNP_copynumber$Chromosome==as.character(mutations_table[mut,"Chrom"]) & OncoSNP_copynumber$StartPosition<as.numeric(mutations_table[mut,"Pos"]) & OncoSNP_copynumber$EndPosition>as.numeric(mutations_table[mut ,"Pos"]) , ]
+
 
 
     if(nrow(mutcn_df)==0)
@@ -1899,15 +1902,16 @@ getCopyNumber<-function(OncoSNP_copynumber,mutations_table){
 
     mutcn <- mutcn_df[which.max(as.vector(unlist(mutcn_df["Rank"]))),list_column]
     mut_cn_df_plot<-mutcn_df[mutcn_df$Rank<3,]
-    mutcn_plot <- mut_cn_df_plot[which.max(as.vector(unlist(mut_cn_df_plot["Rank"]))),"CopyNumber"]
+    # mutcn_plot <- mut_cn_df_plot[which.max(as.vector(unlist(mut_cn_df_plot["Rank"]))),"CopyNumber"]
 
-    CopyNumber_df[mut,3:13]= c(mutcn[3:12],  mutcn_plot )
+    CopyNumber_df[mut,3:12]= c(mutcn[3:12])
 
 
   }
 
-  CopyNumber_df
 
+  colnames(CopyNumber_df) = c("Chrom","Pos","CopyNumber","LOH","Rank","Loglik","nProbes","NormalFraction","TumourState","PloidyNo","MajorCopyNumber","MinorCopyNumber")
+  CopyNumber_df
 
 
 }
