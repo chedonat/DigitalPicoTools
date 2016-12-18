@@ -1346,6 +1346,27 @@ if(progress){
 }
 
 
+#' Compute the alternate phasing code
+#'
+#' Give the alternate phasing code
+#'
+#' @export
+alternate_phasingcode<-function(phasingcode){
+  index=substr(phasingcode,nchar(phasingcode),nchar(phasingcode))
+  if(index=="1"){
+    altindex="0"
+  }else if (index=="0"){
+    altindex="1"
+  }else{
+    cat("\n Code : ", phasingcode)
+    stop("Error, last digit :  of the code should be 1 or 0")
+  }
+
+  altcode=paste(substr(phasingcode,1,nchar(phasingcode)-1),altindex,sep="")
+  altcode
+}
+
+
 
 
 #' Compute the Phaisng Code
@@ -1405,20 +1426,7 @@ ComputePhasingCode_iterative<-function(LFR_withMutations_df,Mutations_set,Retrie
 
 
 
-  alternate_phasingcode<-function(phasingcode){
-    index=substr(phasingcode,nchar(phasingcode),nchar(phasingcode))
-    if(index=="1"){
-      altindex="0"
-    }else if (index=="0"){
-      altindex="1"
-    }else{
-      cat("\n Code : ", phasingcode)
-      stop("Error, last digit :  of the code should be 1 or 0")
-    }
 
-    altcode=paste(substr(phasingcode,1,nchar(phasingcode)-1),altindex,sep="")
-    altcode
-  }
 
   for(imut in 1 :nrow(MutationsPhase_df))
   {
@@ -1613,26 +1621,26 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
 
 
   #select the level 1 mutations Germline mutations with Pass filer, shall with retrieve the homozygous?
-#
-#
-#
-#      if(mode=="iterative"){
-#        cat("\n\n\t Computing the phasing using the iterative approach")
-#        mutationphasing_df= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
-#      }else if(mode=="recursive"){
-#        cat("\n\n\t Computing the phasing using the reciursive approach")
-#        mutationphasing_df= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
-#      } else  if(mode=="both"){
-#        cat("\n\n\t Computing the phasing using both methods")
-#
-#
-#        cat("\n\n\t Computing the phasing using the iterative approach")
-#        mutationphasing_df_iterative= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
-#
-#        cat("\n\n\t Computing the phasing using the reciursive approach")
-#        mutationphasing_df_recursive= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
-#
-#      }
+  #
+  #
+  #
+  #      if(mode=="iterative"){
+  #        cat("\n\n\t Computing the phasing using the iterative approach")
+  #        mutationphasing_df= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
+  #      }else if(mode=="recursive"){
+  #        cat("\n\n\t Computing the phasing using the reciursive approach")
+  #        mutationphasing_df= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
+  #      } else  if(mode=="both"){
+  #        cat("\n\n\t Computing the phasing using both methods")
+  #
+  #
+  #        cat("\n\n\t Computing the phasing using the iterative approach")
+  #        mutationphasing_df_iterative= ComputePhasingCode_iterative(LFR_withMutations_df, Mutations_set,RetrieveHomo=FALSE)
+  #
+  #        cat("\n\n\t Computing the phasing using the reciursive approach")
+  #        mutationphasing_df_recursive= ComputePhasingCode_recursive(LFR_withMutations_df, Mutations_set)
+  #
+  #      }
 
 
 
@@ -1721,13 +1729,18 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
 
     cat("\n\nCompute level 2 phasecode ...\n\n\t")
 
+
     Level2_mutations=rownames(AllMutations_df[is.na(AllMutations_df$PhasingCode1),])
+    cat("\n \n Number level 2 to compute : ", length(Level2_mutations),"\n\n")
+
+
     for(imut in 1:length(Level2_mutations)){
       if(imut %%1000==0)
         cat(" ", imut )
       mut = Level2_mutations[imut]
       pos=AllMutations_df[mut,"Pos"]
-      wells_ids=unlist(strsplit(AllMutations_df[mut,"WV_IDs"],":"))
+      wells_ids=unlist(strsplit(as.character(AllMutations_df[mut,"WV_IDs"]),":"))
+
       PhaseCandidate = unique(c(names(PhasingCode1_LastPos[PhasingCode1_LastPos<pos+1000000 & PhasingCode1_LastPos>pos-1000000 ]),
                                 names(PhasingCode1_FirstPos[PhasingCode1_FirstPos<pos+1000000 & PhasingCode1_FirstPos>pos-1000000 ])))
       if(length(PhaseCandidate)>10){
@@ -1746,13 +1759,32 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
       if(length(PhaseCandidate)==0)
         next
 
-      number_intersecting_wells= unlist(lapply(PhaseCandidate, function(x) length(intersect(PhasingCode1_wells[x],wells_ids)) ))
+      number_intersecting_wells= unlist(lapply(PhaseCandidate, function(x)
+        length(intersect(as.character(unlist(PhasingCode1_wells[x])),wells_ids)) ))
+
       names(number_intersecting_wells) = PhaseCandidate
       number_intersecting_wells=sort(number_intersecting_wells,decreasing = TRUE)
 
       if(number_intersecting_wells[1] > 0){
         AllMutations_df[mut,"PhasingCode1"] = names(number_intersecting_wells[1])
         AllMutations_df[mut,"PhasingCode1_Level"] = 2
+
+      }else{
+        #We try linking by the reference
+        wells_ids=unlist(strsplit(as.character(AllMutations_df[mut,"WR_IDs"]),":"))
+        if(length(wells_ids)==0)
+          next
+
+        number_intersecting_wells= unlist(lapply(PhaseCandidate, function(x) length(intersect(as.character(unlist(PhasingCode1_wells[x])),wells_ids)) ))
+        names(number_intersecting_wells) = PhaseCandidate
+        number_intersecting_wells=sort(number_intersecting_wells,decreasing = TRUE)
+        if(number_intersecting_wells[1] > 0){
+
+          AllMutations_df[mut,"PhasingCode1"] = alternate_phasingcode(names(number_intersecting_wells[1]))
+          AllMutations_df[mut,"PhasingCode1_Level"] = 2
+
+        }
+
 
       }
 
@@ -1801,17 +1833,21 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
     }
 
 
+
     ###Level 2
 
     cat("\n\nCompute level 2 phasecode ...\n\n\t")
 
     Level2_mutations=rownames(AllMutations_df[is.na(AllMutations_df$PhasingCode2),])
+    cat("\n \n Number level 2 to compute : ", length(Level2_mutations),"\n\n")
+
     for(imut in 1:length(Level2_mutations)){
       if(imut %%1000==0)
         cat(" ", imut )
       mut = Level2_mutations[imut]
       pos=AllMutations_df[mut,"Pos"]
-      wells_ids=unlist(strsplit(AllMutations_df[mut,"WV_IDs"],":"))
+      wells_ids=unlist(strsplit(as.character(AllMutations_df[mut,"WV_IDs"]),":"))
+
       PhaseCandidate = unique(c(names(PhasingCode2_LastPos[PhasingCode2_LastPos<pos+1000000 & PhasingCode2_LastPos>pos-1000000 ]),
                                 names(PhasingCode2_FirstPos[PhasingCode2_FirstPos<pos+1000000 & PhasingCode2_FirstPos>pos-1000000 ])))
       if(length(PhaseCandidate)>10){
@@ -1827,10 +1863,12 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
                                   names(PhasingCode2_FirstPos[PhasingCode2_FirstPos<pos+50000 & PhasingCode2_FirstPos>pos-50000 ])))
       }
 
+
       if(length(PhaseCandidate)==0)
         next
 
-      number_intersecting_wells= unlist(lapply(PhaseCandidate, function(x) length(intersect(PhasingCode2_wells[x],wells_ids)) ))
+      number_intersecting_wells= unlist(lapply(PhaseCandidate, function(x)
+        length(intersect(as.character(unlist(PhasingCode2_wells[x])),wells_ids)) ))
       names(number_intersecting_wells) = PhaseCandidate
       number_intersecting_wells=sort(number_intersecting_wells,decreasing = TRUE)
 
@@ -1838,12 +1876,28 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
         AllMutations_df[mut,"PhasingCode2"] = names(number_intersecting_wells[1])
         AllMutations_df[mut,"PhasingCode2_Level"] = 2
 
+      }else{
+        #We try linking by the reference
+        wells_ids=unlist(strsplit(as.character(AllMutations_df[mut,"WR_IDs"]),":"))
+        if(length(wells_ids)==0)
+          next
+
+        number_intersecting_wells= unlist(lapply(PhaseCandidate, function(x) length(intersect(as.character(unlist(PhasingCode2_wells[x])),wells_ids)) ))
+        names(number_intersecting_wells) = PhaseCandidate
+        number_intersecting_wells=sort(number_intersecting_wells,decreasing = TRUE)
+        if(number_intersecting_wells[1] > 0){
+
+          AllMutations_df[mut,"PhasingCode2"] = alternate_phasingcode(names(number_intersecting_wells[1]))
+          AllMutations_df[mut,"PhasingCode2_Level"] = 2
+
+        }
+
+
       }
 
 
-
-
     }
+
 
   }
 
@@ -1860,6 +1914,9 @@ ComputePhasingCode<-function(LFR_withMutations_df,Mutations_set,mode="recursive"
 
 
 }
+
+
+
 
 
 

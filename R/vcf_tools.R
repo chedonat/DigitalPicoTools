@@ -75,62 +75,92 @@ select_filter <- function(variant_df, filter_to_include, filter_to_exclude) {
     variant_df[selection_list_to_include & !selection_list_to_exclude, ]
 }
 
-# Generate a tabular form of the VCF files
+# Generate a tabular from a VCF files
 #' @export
-get_coveragetabular <- function(variant_df) {
+get_coveragetabular <- function(variant_df, variant_caller="Platypus") {
 
-    samples_id = colnames(variant_df[10:ncol(variant_df)])
 
-    nb_samples = length(samples_id)
+  samples_id = colnames(variant_df[10:ncol(variant_df)])
 
-    # Select only well formed info line
+  nb_samples = length(samples_id)
 
+  # Select only well formed info line
+
+
+  if(variant_caller=="platypus"){
+
+    #Selecting only variant with an info
     variant_df = variant_df[!is.na(variant_df$Info) & variant_df$Info != "" & grepl("TC=", variant_df$Info), ]
-
     variant_passed = variant_df
     variant_passed = variant_df[c("Chrom", "Pos", "REF", "ALT", "Qual", "Filter")]
 
     cat("\nTC...")
     variant_passed["TC"] = unlist(lapply(unlist(variant_df["Info"]), function(x) as.numeric(unlist(strsplit(unlist(strsplit(as.character(x), ";"))[unlist(lapply(unlist(strsplit(as.character(x),
-        ";")), function(y) grepl("TC=", y)))], "="))[2])))
+                                                                                                                                                                                 ";")), function(y) grepl("TC=", y)))], "="))[2])))
     cat("\nTR...")
     variant_passed["TR"] = unlist(lapply(unlist(variant_df["Info"]), function(x) as.numeric(unlist(strsplit(unlist(strsplit(unlist(strsplit(as.character(x), ";"))[unlist(lapply(unlist(strsplit(as.character(x),";")), function(y) grepl("TR=", y)))], "="))[2],","))[1])))
     cat("\nAF...")
     variant_passed["AF"] = variant_passed["TR"]/variant_passed["TC"]
-
     cat("\nGT/NR/NV \n Processing sample/well:  : ")
 
     for (isample in 1:nb_samples) {
-        cat(" ", isample)
-
-
-
+      cat(" ", isample)
       values=unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])),
                            function(x) unlist(strsplit(x, ":"))[c(1, 5, 6)]))
-
       values=unlist(lapply(values,function(x) unlist(strsplit(x,","))[1]))
-
       variant_passed[paste(c("GT_", "NR_", "NV_"), samples_id[isample], sep = "")] = matrix(values, ncol=3,byrow=T)
-
-
-
-      #  variant_passed[paste(c("GT_", "NR_", "NV_"), samples_id[isample], sep = "")] = unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])),
-      #      function(x) unlist(strsplit(x, ":"))[c(1, 5, 6)]))
-
-        # variant_passed[paste('NR_',samples_id[isample],sep='')] = unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])), function(x)
-        # unlist(strsplit(x,':'))[5] )) variant_passed[paste('NV_',samples_id[isample],sep='')] =
-        # unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])), function(x) unlist(strsplit(x,':'))[6] ))
-       # variant_passed[paste("AF_", samples_id[isample], sep = "")] = as.numeric(unlist(variant_passed[paste("NV_", samples_id[isample], sep = "")]))/as.numeric(unlist(variant_passed[paste("NR_",
-       #     samples_id[isample], sep = "")]))
-
-        # if(isample==1) variant_passed['GT']=unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])), function(x)
-        # unlist(strsplit(x,':'))[1] )) else variant_passed['GT']=paste(unlist(variant_passed['GT']),
-        # unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])), function(x) unlist(strsplit(x,':'))[1] )),sep=':')
     }
 
-    cat("\n\n All information retrieved \n\n")
-    variant_passed
+  }else  if(variant_caller=="isaac"){
 
+    get_AD<-function(x){
+      strlist=unlist(strsplit(as.character(x), ":"))
+      countallele = strlist[length(strlist)]
+    }
+
+
+    #Selecting only variant with an info
+    variant_df = variant_df[!is.na(variant_df$Format) & variant_df$Format != "" & grepl(":AD", variant_df$Format), ]
+    variant_passed = variant_df
+    variant_passed = variant_df[c("Chrom", "Pos", "REF", "ALT", "Qual", "Filter")]
+
+
+
+    for (isample in 1:nb_samples) {
+      cat(" ", isample)
+
+      if(nb_samples>1){
+        suffix=paste("_",samples_id[isample],sep="")
+      }else{
+        suffix=""
+      }
+
+
+      cat("\nAD...")
+      variant_passed[paste("AD",suffix,sep="")] = unlist(lapply(as.character(unlist(variant_df[samples_id[isample]])), function(x) get_AD(x)))
+
+      cat("\nTREF...")
+      variant_passed[paste("TR_REF",suffix,sep="")] = unlist(lapply(unlist(variant_passed$AD), function(x) as.numeric(unlist(strsplit(as.character(x), ","))[1])))
+      cat("\nTALT...")
+      variant_passed[paste("TR_ALT",suffix,sep="")] = unlist(lapply(unlist(variant_passed$AD), function(x) as.numeric(unlist(strsplit(as.character(x), ","))[2])))
+      cat("\nTR2...")
+      variant_passed[paste("TR_ALT2",suffix,sep="")] = unlist(lapply(unlist(variant_passed$AD), function(x) as.numeric(unlist(strsplit(as.character(x), ","))[3])))
+      cat("\nTC...")
+      variant_passed[paste("TC",suffix,sep="")] =rowSums(variant_passed[c("TR_REF","TR_ALT","TR_ALT2")],na.rm=T)
+
+
+      cat("\nAF...")
+      variant_passed[paste("AF",suffix,sep="")] = variant_passed["TR_ALT"]/variant_passed["TC"]
+      cat("\nAF2...")
+      variant_passed[paste("AF2",suffix,sep="")] = variant_passed["TR_ALT2"]/variant_passed["TC"]
+
+
+    }
+
+  }
+
+  cat("\n\n All information retrieved \n\n")
+  variant_passed
 }
 
 
