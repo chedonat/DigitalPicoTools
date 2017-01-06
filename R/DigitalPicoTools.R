@@ -1113,9 +1113,9 @@ getLFRset <- function(wells_list, mindistance, unexists.action = "unexists.fail"
             N = nrow(reads_fragment)
             if(N==0) next
             if(N==1){
-              reads_fragment["gap"] = 1e+05
+              reads_fragment["gap"] = 1e+09
             }else{
-              reads_fragment["gap"] = c(1e+05, as.numeric(as.character(unlist(reads_fragment[2:N, "rstart"]))) - as.numeric(as.character(unlist(reads_fragment[1:(N -
+              reads_fragment["gap"] = c(1e+09, as.numeric(as.character(unlist(reads_fragment[2:N, "rstart"]))) - as.numeric(as.character(unlist(reads_fragment[1:(N -
                                                                                                                                                                     1), "rend"]))))
             }
 
